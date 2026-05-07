@@ -1,88 +1,88 @@
-# CommitDiffAIReview MVP Design
+# CommitDiffAIReview MVP 设计文档
 
-Date: 2026-05-07
+日期：2026-05-07
 
-## Goal
+## 目标
 
-Build an IntelliJ IDEA plugin MVP named `CommitDiffAIReview`. Before a user commits code, the plugin reviews the current staged Git diff with an OpenAI-compatible API and displays structured findings in an IntelliJ ToolWindow.
+构建一个名为 `CommitDiffAIReview` 的 IntelliJ IDEA 插件 MVP。在用户提交代码前，插件对当前 Git staged diff 调用 OpenAI Compatible API 进行 AI Code Review，并在 IntelliJ ToolWindow 中展示结构化 Review 结果。
 
-## Scope
+## 范围
 
-### In scope
+### 实现范围
 
-- IntelliJ IDEA 2024+ plugin using IntelliJ Platform SDK.
-- Kotlin with Gradle Kotlin DSL.
-- Swing UI.
-- OkHttp for HTTP calls.
-- kotlinx.serialization for JSON request/response handling.
-- An `AI Review` action exposed from the Commit/VCS workflow.
-- IntelliJ API-based staged unified diff collection; no shell `git` commands.
-- OpenAI-compatible chat completions API integration.
-- `AI Review` ToolWindow displaying risk level, file, line, and message.
-- Global IDE settings for `baseUrl`, `apiKey`, and `model`.
+- 基于 IntelliJ Platform SDK，兼容 IntelliJ IDEA 2024+。
+- 使用 Kotlin 与 Gradle Kotlin DSL。
+- 使用 Swing 构建 UI。
+- 使用 OkHttp 发起 HTTP 请求。
+- 使用 kotlinx.serialization 处理 JSON 请求与响应。
+- 在 Commit/VCS 工作流中提供 `AI Review` 入口 Action。
+- 使用 IntelliJ API 获取 staged unified diff，不通过 shell 执行 `git` 命令。
+- 调用 OpenAI Compatible Chat Completions API。
+- 新增 `AI Review` ToolWindow，展示风险等级、文件名、行号和 Review 信息。
+- 提供 IDE 全局配置：`baseUrl`、`apiKey`、`model`。
 
-### Out of scope
+### 不实现范围
 
-- Automatic fixes.
-- Agent workflows.
-- Vector databases.
-- Multi-turn chat.
-- Local models.
-- User systems.
-- Enterprise rules.
-- Configuration center.
-- Spring, JavaFX, Compose, databases, or external service frameworks.
+- 自动修复。
+- Agent 工作流。
+- 向量数据库。
+- 多轮对话。
+- 本地模型。
+- 用户系统。
+- 企业规则。
+- 配置中心。
+- Spring、JavaFX、Compose、数据库或外部服务框架。
 
-## Architecture
+## 架构
 
-The project is a small IntelliJ plugin with explicit package boundaries:
+项目是一个小型 IntelliJ 插件，按职责划分包结构：
 
-- `action`: user entry points, especially `AIReviewAction`.
-- `git`: staged diff retrieval.
-- `ai`: AI provider interface and OpenAI-compatible provider.
-- `review`: prompt construction, response parsing, and review orchestration.
-- `toolwindow`: Swing ToolWindow UI and result update service.
-- `model`: review models and OpenAI DTOs.
-- `settings`: global IDE configuration UI and persistence.
+- `action`：用户入口，主要是 `AIReviewAction`。
+- `git`：获取 staged diff。
+- `ai`：AI Provider 接口与 OpenAI Compatible Provider 实现。
+- `review`：Prompt 构造、响应解析、Review 编排。
+- `toolwindow`：Swing ToolWindow UI 与结果更新服务。
+- `model`：Review 模型与 OpenAI DTO。
+- `settings`：全局 IDE 配置 UI 与持久化。
 
-Primary flow:
+主流程：
 
-1. User clicks `AI Review` from the Commit/VCS workflow.
-2. `AIReviewAction` opens the `AI Review` ToolWindow and sets status to `Reviewing...`.
-3. `GitStagedDiffProvider` collects the current staged unified diff using IntelliJ Git APIs.
-4. If no staged diff exists, the ToolWindow shows `No staged changes to review.` and no AI request is sent.
-5. `ReviewPromptBuilder` creates a structured review prompt from the diff.
-6. `OpenAIProvider` sends the request to the configured OpenAI-compatible chat completions endpoint.
-7. `ReviewResultParser` parses the response into `ReviewFinding` items.
-8. The ToolWindow table displays findings.
+1. 用户在 Commit/VCS 工作流中点击 `AI Review`。
+2. `AIReviewAction` 打开 `AI Review` ToolWindow，并将状态设置为 `Reviewing...`。
+3. `GitStagedDiffProvider` 使用 IntelliJ Git API 获取当前 staged unified diff。
+4. 如果没有 staged diff，ToolWindow 显示 `No staged changes to review.`，不调用 AI。
+5. `ReviewPromptBuilder` 根据 diff 构造结构化 Review Prompt。
+6. `OpenAIProvider` 将请求发送到配置的 OpenAI Compatible Chat Completions endpoint。
+7. `ReviewResultParser` 将模型响应解析为 `ReviewFinding` 列表。
+8. ToolWindow 表格展示 Review 结果。
 
-## Components
+## 组件设计
 
 ### `AIReviewAction`
 
-Responsibilities:
+职责：
 
-- Start the review when the user invokes `AI Review`.
-- Keep orchestration thin and delegate Git, AI, parsing, and UI work.
-- Run network/review work off the EDT.
-- Update ToolWindow UI on the EDT.
+- 响应用户点击 `AI Review`。
+- 只做轻量编排，将 Git、AI、解析、UI 逻辑委托给对应组件。
+- 在 EDT 之外执行网络请求与 Review 流程。
+- 在 EDT 中更新 ToolWindow UI。
 
-It must not run shell commands or contain HTTP/JSON parsing details.
+该类不执行 shell 命令，也不包含 HTTP 或 JSON 解析细节。
 
 ### `GitStagedDiffProvider`
 
-Responsibilities:
+职责：
 
-- Use IntelliJ Git/Change APIs to obtain the staged/index unified diff.
-- Support projects with one or more Git roots.
-- Return a single combined diff string.
-- Return a blank string when no staged changes exist.
+- 使用 IntelliJ Git/Change API 获取 staged/index 状态的 unified diff。
+- 支持包含多个 Git root 的项目。
+- 返回合并后的 diff 字符串。
+- 没有 staged changes 时返回空字符串。
 
-The implementation must not execute `git diff` via shell. If API signatures differ across 2024.x builds, the implementation should remain within IntelliJ Platform/Git4Idea APIs, such as Git change utilities, content revisions, or diff providers.
+实现不得通过 shell 执行 `git diff`。如果 IntelliJ IDEA 2024.x 不同小版本中的 API 签名存在差异，实现仍应保持在 IntelliJ Platform/Git4Idea API 范围内，例如 Git change utilities、content revisions 或 diff providers。
 
-### `AIProvider` and `OpenAIProvider`
+### `AIProvider` 与 `OpenAIProvider`
 
-`AIProvider` is the minimal abstraction:
+`AIProvider` 是最小抽象：
 
 ```kotlin
 interface AIProvider {
@@ -90,37 +90,38 @@ interface AIProvider {
 }
 ```
 
-`OpenAIProvider` responsibilities:
+`OpenAIProvider` 职责：
 
-- Read `baseUrl`, `apiKey`, and `model` from global settings.
-- POST to the OpenAI-compatible `/v1/chat/completions` endpoint.
-- Use OkHttp for HTTP and kotlinx.serialization for JSON.
-- Send a system message plus the user review prompt.
-- Return `choices[0].message.content`.
-- Throw clear errors for missing API key, HTTP failures, malformed responses, and network failures.
+- 从全局配置读取 `baseUrl`、`apiKey`、`model`。
+- POST 到 OpenAI Compatible `/v1/chat/completions` endpoint。
+- 使用 OkHttp 发起 HTTP 请求。
+- 使用 kotlinx.serialization 构造与解析 JSON。
+- 发送一个 system message 和一个 user prompt。
+- 返回 `choices[0].message.content`。
+- 对缺失 API Key、HTTP 失败、响应格式异常、网络异常抛出清晰错误。
 
-Default settings:
+默认配置：
 
-- `baseUrl`: `https://api.openai.com`
-- `apiKey`: empty
-- `model`: `gpt-4o-mini`
+- `baseUrl`：`https://api.openai.com`
+- `apiKey`：空
+- `model`：`gpt-4o-mini`
 
 ### `ReviewPromptBuilder`
 
-Responsibilities:
+职责：
 
-- Build a prompt that says the input is a staged unified diff.
-- Ask the model to focus on:
-  - Bug risk
-  - Null pointer risk
-  - Concurrency problems
-  - Transaction problems
-  - SQL risk
-  - Security problems
-  - Code readability
-- Require a JSON array response only.
+- 明确说明输入内容是 staged unified diff。
+- 要求模型重点检查：
+  - Bug 风险
+  - 空指针风险
+  - 并发问题
+  - 事务问题
+  - SQL 风险
+  - 安全问题
+  - 代码可读性
+- 要求模型只返回 JSON 数组。
 
-Expected response shape:
+期望返回格式：
 
 ```json
 [
@@ -133,93 +134,93 @@ Expected response shape:
 ]
 ```
 
-Rules:
+规则：
 
-- `level` must be `HIGH`, `MEDIUM`, or `LOW`.
-- `line` may be `null` when the line cannot be identified.
-- Return `[]` when no issues are found.
-- Do not return Markdown or explanatory text.
+- `level` 只能是 `HIGH`、`MEDIUM` 或 `LOW`。
+- 如果无法定位行号，`line` 可以为 `null`。
+- 没有问题时返回 `[]`。
+- 不返回 Markdown，也不返回额外解释文本。
 
 ### `ReviewResultParser`
 
-Responsibilities:
+职责：
 
-- Parse model output into `ReviewFinding` objects.
-- Support:
-  - Pure JSON array.
-  - Markdown fenced JSON code blocks.
-  - The first JSON array embedded in surrounding text.
-- If parsing fails, return one fallback finding:
+- 将模型输出解析为 `ReviewFinding` 对象。
+- 支持以下格式：
+  - 纯 JSON 数组。
+  - Markdown fenced JSON code block。
+  - 包含在其他文本中的第一个 JSON 数组。
+- 如果解析失败，返回一条兜底结果：
   - `level = LOW`
   - `file = AI Response`
   - `line = null`
-  - `message = truncated raw model response`
+  - `message = 截断后的模型原始响应`
 
-This avoids silent failure and keeps the ToolWindow useful even when the model violates the format.
+这样可以避免静默失败，即使模型没有严格遵循格式，ToolWindow 仍能展示有用信息。
 
 ### ToolWindow
 
-ToolWindow ID: `AI Review`
+ToolWindow ID：`AI Review`
 
-UI:
+UI 设计：
 
-- Swing-based.
-- Top status label: `Ready`, `Reviewing...`, `No staged changes to review.`, `Error: ...`, `No issues found.`, or `N findings`.
-- Main `JBTable` columns:
+- 使用 Swing。
+- 顶部状态标签显示：`Ready`、`Reviewing...`、`No staged changes to review.`、`Error: ...`、`No issues found.` 或 `N findings`。
+- 主体使用 `JBTable`，包含以下列：
   - `Level`
   - `File`
   - `Line`
   - `Message`
-- Action invocation automatically opens the ToolWindow and refreshes the table.
+- 用户触发 Action 后自动打开 ToolWindow，并刷新表格。
 
 ### Settings
 
-Settings page:
+Settings 页面：
 
 `Settings / Tools / CommitDiffAIReview`
 
-Fields:
+字段：
 
 - `Base URL`
 - `API Key`
 - `Model`
 
-Configuration is IDE-global through `PersistentStateComponent`. The API key is stored in IDE configuration for MVP simplicity; PasswordSafe integration is intentionally excluded from the MVP.
+配置通过 `PersistentStateComponent` 以 IDE 全局方式保存。MVP 中 API Key 直接保存到 IDE 配置里；为了保持实现简单，暂不接入 PasswordSafe。
 
-## Error Handling
+## 错误处理
 
-- No project: action exits.
-- No staged diff: show `No staged changes to review.` and skip AI request.
-- Missing API key: show a settings hint and skip AI request.
-- HTTP non-2xx: show an error summary in the ToolWindow.
-- Network exception: show an error summary in the ToolWindow.
-- Invalid AI JSON: create the fallback LOW finding with raw response content.
-- Long-running review: run in a background coroutine/task and update Swing UI on the EDT.
+- 无 Project：Action 直接退出。
+- 无 staged diff：显示 `No staged changes to review.`，跳过 AI 请求。
+- 未配置 API Key：显示配置提示，跳过 AI 请求。
+- HTTP 非 2xx：在 ToolWindow 中显示错误摘要。
+- 网络异常：在 ToolWindow 中显示错误摘要。
+- AI 返回 JSON 无法解析：生成一条 LOW 级兜底结果，展示原始响应内容。
+- Review 请求耗时较长：在后台任务中执行，Swing UI 更新切回 EDT。
 
-## Testing and Verification
+## 测试与验证
 
-Automated tests:
+自动化测试：
 
-- Prompt builder includes all required review categories.
-- Parser handles pure JSON arrays.
-- Parser handles fenced `json` code blocks.
-- Parser handles a JSON array embedded in text.
-- Parser falls back on invalid output.
+- Prompt builder 包含所有要求的 Review 类别。
+- Parser 能解析纯 JSON 数组。
+- Parser 能解析 fenced `json` 代码块。
+- Parser 能解析嵌入在文本中的 JSON 数组。
+- Parser 对非法输出能生成兜底结果。
 
-Manual verification:
+手动验证：
 
-- `./gradlew test` passes.
-- `./gradlew runIde` starts the plugin sandbox.
-- Settings page saves and reloads configuration.
-- Staged changes can be reviewed without shell Git commands.
-- ToolWindow shows findings, empty results, no staged changes, and API errors.
+- `./gradlew test` 通过。
+- `./gradlew runIde` 能启动插件沙箱。
+- Settings 页面可以保存并重新加载配置。
+- staged changes 可以被 Review，且不通过 shell 执行 Git 命令。
+- ToolWindow 能展示 findings、空结果、无 staged changes 和 API 错误。
 
-## Deliverables
+## 交付物
 
-- Complete Gradle Kotlin DSL project.
-- `plugin.xml` with action, ToolWindow, and settings registration.
-- Kotlin source code for all packages.
-- OpenAI-compatible API implementation.
-- IntelliJ API-based staged diff implementation.
-- JSON parsing implementation.
-- README with setup, configuration, run, and usage instructions.
+- 完整 Gradle Kotlin DSL 项目。
+- 包含 Action、ToolWindow、Settings 注册的 `plugin.xml`。
+- 按分层包组织的 Kotlin 源码。
+- OpenAI Compatible API 调用实现。
+- 基于 IntelliJ API 的 staged diff 获取实现。
+- JSON 解析实现。
+- 中文 README，包含安装、配置、运行与使用说明。
