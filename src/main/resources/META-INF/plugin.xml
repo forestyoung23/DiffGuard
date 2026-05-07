@@ -1,0 +1,34 @@
+<idea-plugin>
+    <id>com.commitdiffaireview</id>
+    <name>CommitDiffAIReview</name>
+    <vendor>CommitDiffAIReview</vendor>
+
+    <description><![CDATA[
+        Review staged git diffs with an OpenAI-compatible API before commit.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow
+            id="AI Review"
+            anchor="right"
+            factoryClass="com.commitdiffaireview.toolwindow.AIReviewToolWindowFactory" />
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.commitdiffaireview.settings.AIReviewConfigurable"
+            displayName="CommitDiffAIReview" />
+    </extensions>
+
+    <actions>
+        <action
+            id="CommitDiffAIReview.AIReviewAction"
+            class="com.commitdiffaireview.action.AIReviewAction"
+            text="AI Review"
+            description="Review staged changes with AI">
+            <add-to-group group-id="Vcs.MessageActionGroup" anchor="last" />
+            <add-to-group group-id="ChangesViewPopupMenu" anchor="last" />
+        </action>
+    </actions>
+</idea-plugin>
