@@ -22,19 +22,26 @@ class AIReviewAction : AnAction("AI Review") {
         val toolWindowService = project.service<AIReviewToolWindowService>()
 
         ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.show()
-        toolWindowService.showStatus("Reviewing...")
+        toolWindowService.showStatus("正在获取 staged diff 并准备 AI Review...")
 
         scope.launch {
             val result = runCatching {
                 withContext(Dispatchers.IO) {
-                    ReviewOrchestrator(project).reviewStagedDiff()
+                    ReviewOrchestrator(
+                        project = project,
+                        onStatus = { status ->
+                            launch(Dispatchers.Main) {
+                                toolWindowService.showStatus(status)
+                            }
+                        }
+                    ).reviewStagedDiff()
                 }
             }
 
             withContext(Dispatchers.Main) {
                 result.fold(
                     onSuccess = toolWindowService::showFindings,
-                    onFailure = { error -> toolWindowService.showStatus(error.message ?: "AI review failed.") }
+                    onFailure = { error -> toolWindowService.showStatus(error.message ?: "AI Review 失败。") }
                 )
             }
         }

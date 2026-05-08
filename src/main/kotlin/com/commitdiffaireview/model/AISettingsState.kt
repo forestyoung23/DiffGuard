@@ -6,5 +6,9 @@ import kotlinx.serialization.Serializable
 data class AISettingsState(
     var baseUrl: String = "https://api.openai.com/v1",
     var apiKey: String = "",
-    var model: String = "gpt-4o-mini"
+    var model: String = "gpt-4o-mini",
+    var connectTimeoutSeconds: Int = 30,
+    var writeTimeoutSeconds: Int = 60,
+    var readTimeoutSeconds: Int = 300,
+    var callTimeoutSeconds: Int = 360
 )

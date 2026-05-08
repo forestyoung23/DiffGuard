@@ -19,7 +19,7 @@ class ReviewResultParser {
                     level = "LOW",
                     file = "AI Response",
                     line = null,
-                    message = rawResponse.trim().take(1_000)
+                    message = "AI 返回内容不是合法 JSON，已显示原始内容：${rawResponse.trim().take(1_000)}"
                 )
             )
         }

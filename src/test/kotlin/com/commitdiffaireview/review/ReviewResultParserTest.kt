@@ -60,6 +60,6 @@ class ReviewResultParserTest {
         assertEquals("LOW", result[0].level)
         assertEquals("AI Response", result[0].file)
         assertNull(result[0].line)
-        assertEquals("not json", result[0].message)
+        assertEquals("AI 返回内容不是合法 JSON，已显示原始内容：not json", result[0].message)
     }
 }

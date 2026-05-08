@@ -17,6 +17,7 @@ class ReviewPromptBuilderTest {
         assertTrue(prompt.contains("SQL"))
         assertTrue(prompt.contains("security"))
         assertTrue(prompt.contains("readability"))
+        assertTrue(prompt.contains("message must be written in Chinese"))
         assertTrue(prompt.contains("level"))
         assertTrue(prompt.contains("file"))
         assertTrue(prompt.contains("line"))

@@ -20,11 +20,12 @@ class ReviewPromptBuilder {
             "level": "HIGH",
             "file": "UserService.java",
             "line": 42,
-            "message": "Potential null pointer"
+            "message": "这里用中文描述发现的问题"
           }
         ]
 
         Use level HIGH, MEDIUM, or LOW. Use null for line when no exact line is available.
+        The message must be written in Chinese.
 
         Diff:
         $stagedDiff
