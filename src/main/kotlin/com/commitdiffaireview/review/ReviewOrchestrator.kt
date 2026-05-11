@@ -37,7 +37,7 @@ class ReviewOrchestrator(
                     level = "LOW",
                     file = "Git",
                     line = null,
-                    message = "没有可 Review 的 staged changes。请先执行 git add 或在 Commit 面板勾选要提交的文件。"
+                    message = "没有可 Review 的变更。工作区与 HEAD 完全一致，无需 Review。"
                 )
             )
         }

@@ -125,7 +125,7 @@ internal class AIReviewResultPanelRenderer {
 
     private fun plainText(text: String): JBTextArea = JBTextArea(text).apply {
         isEditable = false
-        isFocusable = false
+        isFocusable = true
         border = JBUI.Borders.empty()
     }
 

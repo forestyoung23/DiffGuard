@@ -11,7 +11,7 @@ class GitStagedDiffProvider(private val project: Project) {
         val repositories = GitUtil.getRepositoryManager(project).repositories
         return repositories.joinToString(separator = "\n") { repository ->
             val handler = GitLineHandler(project, repository.root, GitCommand.DIFF).apply {
-                addParameters("--cached", "--unified=3", "--no-color")
+                addParameters("HEAD", "--unified=3", "--no-color")
             }
             Git.getInstance().runCommand(handler).outputAsJoinedString
         }.trim()
