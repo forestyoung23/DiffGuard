@@ -7,10 +7,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBScrollPane
-import com.intellij.ui.table.JBTable
+import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
+import java.awt.Point
+import javax.swing.JComponent
 import javax.swing.JPanel
-import javax.swing.table.DefaultTableModel
 
 class AIReviewToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -23,32 +25,40 @@ class AIReviewToolWindowFactory : ToolWindowFactory {
 }
 
 class AIReviewToolWindowView {
-    private val tableModel = object : DefaultTableModel(arrayOf("Level", "File", "Line", "Message"), 0) {
-        override fun isCellEditable(row: Int, column: Int): Boolean = false
+    private val renderer = AIReviewResultPanelRenderer()
+    private val contentPanel = JPanel(BorderLayout()).apply {
+        background = UIUtil.getPanelBackground()
+    }
+    private val scrollPane = JBScrollPane(contentPanel).apply {
+        border = JBUI.Borders.empty()
+        viewport.background = UIUtil.getPanelBackground()
     }
 
-    private val table = JBTable(tableModel)
     val component: JPanel = JPanel(BorderLayout()).apply {
-        add(JBScrollPane(table), BorderLayout.CENTER)
+        background = UIUtil.getPanelBackground()
+        add(scrollPane, BorderLayout.CENTER)
     }
 
     fun showStatus(message: String) {
-        tableModel.setRowCount(0)
-        tableModel.addRow(arrayOf("INFO", "", "", message))
+        showContent(renderer.renderStatus(message))
     }
 
     fun showFindings(findings: List<ReviewFinding>) {
-        tableModel.setRowCount(0)
-        findings.forEach { finding ->
-            tableModel.addRow(
-                arrayOf(
-                    finding.level,
-                    finding.file,
-                    finding.line?.toString().orEmpty(),
-                    finding.message
-                )
-            )
-        }
+        showContent(renderer.renderFindings(findings))
+    }
+
+    private fun showContent(content: JComponent) {
+        contentPanel.removeAll()
+        contentPanel.add(content, BorderLayout.NORTH)
+        contentPanel.revalidate()
+        contentPanel.repaint()
+        scrollToTop()
+    }
+
+    private fun scrollToTop() {
+        scrollPane.verticalScrollBar.value = scrollPane.verticalScrollBar.minimum
+        scrollPane.horizontalScrollBar.value = scrollPane.horizontalScrollBar.minimum
+        scrollPane.viewport.viewPosition = Point(0, 0)
     }
 }
 
