@@ -10,26 +10,36 @@ import javax.swing.JComponent
 class AIReviewSettingsComponent {
     private val settings = AISettingsState()
     private val panel: DialogPanel = panel {
-        row("Base URL") {
-            textField().bindText(settings::baseUrl)
+        group("Provider 配置") {
+            row("Base URL") {
+                textField()
+                    .bindText(settings::baseUrl)
+                    .comment("OpenAI-compatible API base URL, e.g. https://api.openai.com/v1")
+            }
+            row("API Key") {
+                passwordField()
+                    .bindText(settings::apiKey)
+                    .comment("Required to call the provider")
+            }
+            row("Model") {
+                textField()
+                    .bindText(settings::model)
+                    .comment("Model name supported by your provider")
+            }
         }
-        row("API Key") {
-            passwordField().bindText(settings::apiKey)
-        }
-        row("Model") {
-            textField().bindText(settings::model)
-        }
-        row("Connect Timeout Seconds") {
-            intTextField().bindIntText(settings::connectTimeoutSeconds)
-        }
-        row("Write Timeout Seconds") {
-            intTextField().bindIntText(settings::writeTimeoutSeconds)
-        }
-        row("Read Timeout Seconds") {
-            intTextField().bindIntText(settings::readTimeoutSeconds)
-        }
-        row("Call Timeout Seconds") {
-            intTextField().bindIntText(settings::callTimeoutSeconds)
+        group("Advanced / 超时配置") {
+            row("Connect Timeout Seconds") {
+                intTextField().bindIntText(settings::connectTimeoutSeconds)
+            }
+            row("Write Timeout Seconds") {
+                intTextField().bindIntText(settings::writeTimeoutSeconds)
+            }
+            row("Read Timeout Seconds") {
+                intTextField().bindIntText(settings::readTimeoutSeconds)
+            }
+            row("Call Timeout Seconds") {
+                intTextField().bindIntText(settings::callTimeoutSeconds)
+            }
         }
     }
 
