@@ -30,8 +30,8 @@ class AIReviewResultPanelRendererTest {
         val component = renderer.renderFindings(emptyList())
 
         val visibleText = visibleTextIn(component)
-        assertTrue(visibleText.contains("AI Review 结果"), visibleText)
-        assertTrue(visibleText.contains("未发现明显问题"), visibleText)
+        assertTrue(visibleText.contains("AI Review 完成"), visibleText)
+        assertTrue(visibleText.contains("AI Review 不能替代测试和人工审查"), visibleText)
     }
 
     @Test
@@ -45,8 +45,8 @@ class AIReviewResultPanelRendererTest {
         )
 
         val visibleText = visibleTextIn(component)
-        assertTrue(visibleText.contains("AI Review 结果"), visibleText)
-        assertTrue(visibleText.contains("发现 3 个问题"), visibleText)
+        assertTrue(visibleText.contains("AI Review 完成"), visibleText)
+        assertTrue(visibleText.contains("发现 3 个问题，其中 1 个 HIGH 需要优先处理。"), visibleText)
         assertTrue(visibleText.contains("HIGH 1"), visibleText)
         assertTrue(visibleText.contains("MEDIUM 1"), visibleText)
         assertTrue(visibleText.contains("LOW 1"), visibleText)

@@ -18,23 +18,33 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 
 internal class AIReviewResultPanelRenderer {
-    fun renderStatus(message: String): JComponent = rootPanel().apply {
-        add(
-            cardPanel().apply {
-                add(titleLabel("AI Review"))
-                add(Box.createVerticalStrut(6))
-                add(bodyText(message))
-            }
+    fun render(state: ReviewUiState): JComponent = when (state) {
+        ReviewUiState.Ready -> renderInfoState(
+            title = "AI Review",
+            detail = "提交前审查当前代码变更，帮助发现潜在 bug、安全风险和可读性问题。",
+            nextStep = "配置 API Key 后，在 Commit/VCS 菜单或 Changes View 中点击 AI Review。"
         )
+        is ReviewUiState.NeedsConfiguration -> renderInfoState(state.title, state.detail, state.nextStep)
+        is ReviewUiState.NoChanges -> renderInfoState(state.title, state.detail, state.nextStep)
+        is ReviewUiState.Reviewing -> renderInfoState(
+            title = "AI Review 进行中",
+            detail = state.message,
+            nextStep = "请保持当前窗口打开，非流式模型可能需要等待一段时间。"
+        )
+        is ReviewUiState.Completed -> renderFindings(state.findings)
+        is ReviewUiState.Failed -> renderInfoState(state.title, state.detail, state.nextStep)
+        is ReviewUiState.ParseFallback -> renderParseFallback(state)
     }
+
+    fun renderStatus(message: String): JComponent = render(ReviewUiState.Reviewing(message))
 
     fun renderFindings(findings: List<ReviewFinding>): JComponent = rootPanel().apply {
         if (findings.isEmpty()) {
             add(
                 cardPanel().apply {
-                    add(titleLabel("AI Review 结果"))
+                    add(titleLabel("AI Review 完成"))
                     add(Box.createVerticalStrut(6))
-                    add(bodyText("未发现明显问题。"))
+                    add(bodyText("AI Review 不能替代测试和人工审查，但当前 diff 没有发现明显风险。"))
                 }
             )
             return@apply
@@ -48,6 +58,38 @@ internal class AIReviewResultPanelRenderer {
             }
             add(findingCard(finding))
         }
+    }
+
+    private fun renderInfoState(title: String, detail: String, nextStep: String): JComponent = rootPanel().apply {
+        add(
+            cardPanel().apply {
+                add(titleLabel(title))
+                add(Box.createVerticalStrut(6))
+                add(bodyText(detail))
+                add(Box.createVerticalStrut(10))
+                add(sectionLabel("下一步"))
+                add(Box.createVerticalStrut(4))
+                add(bodyText(nextStep))
+            }
+        )
+    }
+
+    private fun renderParseFallback(state: ReviewUiState.ParseFallback): JComponent = rootPanel().apply {
+        add(
+            cardPanel().apply {
+                add(titleLabel(state.title))
+                add(Box.createVerticalStrut(6))
+                add(bodyText(state.detail))
+                add(Box.createVerticalStrut(10))
+                add(sectionLabel("原始返回预览"))
+                add(Box.createVerticalStrut(4))
+                add(bodyText(state.rawResponsePreview))
+                add(Box.createVerticalStrut(10))
+                add(sectionLabel("下一步"))
+                add(Box.createVerticalStrut(4))
+                add(bodyText(state.nextStep))
+            }
+        )
     }
 
     private fun rootPanel(): JPanel = JPanel().apply {
@@ -67,9 +109,11 @@ internal class AIReviewResultPanelRenderer {
     }
 
     private fun summaryCard(findings: List<ReviewFinding>): JPanel = cardPanel().apply {
-        add(titleLabel("AI Review 结果"))
+        add(titleLabel("AI Review 完成"))
         add(Box.createVerticalStrut(6))
-        add(bodyText("发现 ${findings.size} 个问题"))
+        add(bodyText(summaryText(findings)))
+        add(Box.createVerticalStrut(8))
+        add(bodyText("HIGH：建议提交前修复。MEDIUM：建议检查。LOW：可按需处理。"))
         add(Box.createVerticalStrut(10))
         add(
             JPanel(FlowLayout(FlowLayout.LEFT, 8, 0)).apply {
@@ -99,6 +143,12 @@ internal class AIReviewResultPanelRenderer {
 
     private fun titleLabel(text: String): JBLabel = JBLabel(text).apply {
         font = font.deriveFont(Font.BOLD)
+        alignmentX = Component.LEFT_ALIGNMENT
+    }
+
+    private fun sectionLabel(text: String): JBLabel = JBLabel(text).apply {
+        font = font.deriveFont(Font.BOLD, font.size2D - 1f)
+        foreground = UIUtil.getContextHelpForeground()
         alignmentX = Component.LEFT_ALIGNMENT
     }
 
@@ -133,6 +183,15 @@ internal class AIReviewResultPanelRenderer {
         "${finding.file}:${finding.line}"
     } else {
         finding.file
+    }
+
+    private fun summaryText(findings: List<ReviewFinding>): String {
+        val highCount = findings.countLevel("HIGH")
+        return if (highCount > 0) {
+            "发现 ${findings.size} 个问题，其中 $highCount 个 HIGH 需要优先处理。"
+        } else {
+            "发现 ${findings.size} 个问题，建议按严重级别逐项检查。"
+        }
     }
 
     private fun List<ReviewFinding>.countLevel(level: String): Int =
