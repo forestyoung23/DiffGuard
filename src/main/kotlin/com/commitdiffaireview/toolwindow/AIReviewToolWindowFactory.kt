@@ -39,12 +39,20 @@ class AIReviewToolWindowView {
         add(scrollPane, BorderLayout.CENTER)
     }
 
+    init {
+        showState(ReviewUiState.Ready)
+    }
+
+    fun showState(state: ReviewUiState) {
+        showContent(renderer.render(state))
+    }
+
     fun showStatus(message: String) {
-        showContent(renderer.renderStatus(message))
+        showState(ReviewUiState.Reviewing(message))
     }
 
     fun showFindings(findings: List<ReviewFinding>) {
-        showContent(renderer.renderFindings(findings))
+        showState(ReviewUiState.Completed(findings))
     }
 
     private fun showContent(content: JComponent) {
@@ -65,6 +73,10 @@ class AIReviewToolWindowView {
 @Service(Service.Level.PROJECT)
 class AIReviewToolWindowService {
     var view: AIReviewToolWindowView? = null
+
+    fun showState(state: ReviewUiState) {
+        view?.showState(state)
+    }
 
     fun showStatus(message: String) {
         view?.showStatus(message)

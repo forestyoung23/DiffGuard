@@ -25,6 +25,16 @@ class AIReviewToolWindowViewTest {
     }
 
     @Test
+    fun `new view starts with ready guidance`() {
+        val view = AIReviewToolWindowView()
+
+        val visibleText = visibleTextIn(view)
+
+        assertTrue(visibleText.contains("AI Review"), visibleText)
+        assertTrue(visibleText.contains("提交前审查当前代码变更"), visibleText)
+    }
+
+    @Test
     fun `showStatus replaces previous content with status panel`() {
         val view = AIReviewToolWindowView()
         view.showFindings(
@@ -38,10 +48,10 @@ class AIReviewToolWindowViewTest {
             )
         )
 
-        view.showStatus("正在请求 AI Review")
+        view.showState(ReviewUiState.Reviewing("正在请求 AI Review"))
 
         val visibleText = visibleTextIn(view)
-        assertTrue(visibleText.contains("AI Review"), visibleText)
+        assertTrue(visibleText.contains("AI Review 进行中"), visibleText)
         assertTrue(visibleText.contains("正在请求 AI Review"), visibleText)
         assertFalse(visibleText.contains("Old.kt:1"), visibleText)
         assertFalse(visibleText.contains("旧问题"), visibleText)
@@ -64,7 +74,7 @@ class AIReviewToolWindowViewTest {
         )
 
         val visibleText = visibleTextIn(view)
-        assertTrue(visibleText.contains("AI Review 结果"), visibleText)
+        assertTrue(visibleText.contains("AI Review 完成"), visibleText)
         assertTrue(visibleText.contains("发现 1 个问题"), visibleText)
         assertTrue(visibleText.contains("HIGH 1"), visibleText)
         assertTrue(visibleText.contains("UserService.kt:42"), visibleText)
