@@ -1,6 +1,7 @@
 package com.commitdiffaireview.action
 
 import com.commitdiffaireview.review.ReviewOrchestrator
+import com.commitdiffaireview.review.compatibilityFindings
 import com.commitdiffaireview.toolwindow.AIReviewToolWindowService
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -40,7 +41,9 @@ class AIReviewAction : AnAction("AI Review") {
 
             withContext(Dispatchers.Main) {
                 result.fold(
-                    onSuccess = toolWindowService::showFindings,
+                    onSuccess = { outcome ->
+                        toolWindowService.showFindings(outcome.compatibilityFindings())
+                    },
                     onFailure = { error -> toolWindowService.showStatus(error.message ?: "AI Review 失败。") }
                 )
             }
