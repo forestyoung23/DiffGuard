@@ -1,5 +1,6 @@
 package com.commitdiffaireview.review
 
+import com.commitdiffaireview.review.ReviewParseResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -61,5 +62,30 @@ class ReviewResultParserTest {
         assertEquals("AI Response", result[0].file)
         assertNull(result[0].line)
         assertEquals("AI 返回内容不是合法 JSON，已显示原始内容：not json", result[0].message)
+    }
+
+    @Test
+    fun `tryParse returns parsed findings when output is valid`() {
+        val result = parser.tryParse(
+            """
+            [{"level":"HIGH","file":"UserService.kt","line":42,"message":"可能空指针"}]
+            """.trimIndent()
+        )
+
+        val parsed = result as ReviewParseResult.Parsed
+        assertEquals(1, parsed.findings.size)
+        assertEquals("HIGH", parsed.findings[0].level)
+        assertEquals("UserService.kt", parsed.findings[0].file)
+        assertEquals(42, parsed.findings[0].line)
+        assertEquals("可能空指针", parsed.findings[0].message)
+    }
+
+    @Test
+    fun `tryParse returns fallback with raw response preview when output is invalid`() {
+        val result = parser.tryParse("not json")
+
+        val fallback = result as ReviewParseResult.Fallback
+        assertEquals("not json", fallback.rawResponsePreview)
+        assertEquals("AI 返回内容无法解析为结构化结果。", fallback.message)
     }
 }

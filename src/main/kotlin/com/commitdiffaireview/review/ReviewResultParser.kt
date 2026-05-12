@@ -3,25 +3,38 @@ package com.commitdiffaireview.review
 import com.commitdiffaireview.model.ReviewFinding
 import kotlinx.serialization.json.Json
 
+sealed interface ReviewParseResult {
+    data class Parsed(val findings: List<ReviewFinding>) : ReviewParseResult
+    data class Fallback(
+        val rawResponsePreview: String,
+        val message: String = "AI 返回内容无法解析为结构化结果。"
+    ) : ReviewParseResult
+}
+
 class ReviewResultParser {
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
     }
 
-    fun parse(rawResponse: String): List<ReviewFinding> {
+    fun parse(rawResponse: String): List<ReviewFinding> = when (val result = tryParse(rawResponse)) {
+        is ReviewParseResult.Parsed -> result.findings
+        is ReviewParseResult.Fallback -> listOf(
+            ReviewFinding(
+                level = "LOW",
+                file = "AI Response",
+                line = null,
+                message = "AI 返回内容不是合法 JSON，已显示原始内容：${result.rawResponsePreview}"
+            )
+        )
+    }
+
+    fun tryParse(rawResponse: String): ReviewParseResult {
         val candidate = extractJsonArray(rawResponse)
         return runCatching {
-            json.decodeFromString<List<ReviewFinding>>(candidate)
+            ReviewParseResult.Parsed(json.decodeFromString<List<ReviewFinding>>(candidate))
         }.getOrElse {
-            listOf(
-                ReviewFinding(
-                    level = "LOW",
-                    file = "AI Response",
-                    line = null,
-                    message = "AI 返回内容不是合法 JSON，已显示原始内容：${rawResponse.trim().take(1_000)}"
-                )
-            )
+            ReviewParseResult.Fallback(rawResponsePreview = rawResponse.trim().take(1_000))
         }
     }
 
