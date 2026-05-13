@@ -33,6 +33,7 @@ dependencies {
             providers.gradleProperty("platformVersion").get()
         )
         bundledPlugin("Git4Idea")
+        bundledPlugin("com.intellij.java")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
 
@@ -41,7 +42,8 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.3")
-    testRuntimeOnly("junit:junit:4.13.2")
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.10.3")
 }
 
 tasks {
