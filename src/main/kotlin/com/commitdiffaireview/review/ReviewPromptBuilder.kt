@@ -1,6 +1,7 @@
 package com.commitdiffaireview.review
 
 import com.commitdiffaireview.context.CodeContext
+import com.commitdiffaireview.context.SpringSemantic
 
 class ReviewPromptBuilder {
 
@@ -25,7 +26,7 @@ class ReviewPromptBuilder {
                 if (ctx.annotations.isNotEmpty()) {
                     appendLine("Annotations: ${ctx.annotations.joinToString(", ")}")
                 }
-                if (ctx.springSemantic.name != "NONE") {
+                if (ctx.springSemantic != SpringSemantic.NONE) {
                     appendLine("Spring Semantic: ${ctx.springSemantic.name}")
                 }
                 if (ctx.superClass != null) {
