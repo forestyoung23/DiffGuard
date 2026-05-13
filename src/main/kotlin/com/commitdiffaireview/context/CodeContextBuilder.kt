@@ -46,7 +46,7 @@ object DiffParser {
             }
         }
 
-        return result
+        return result.filterValues { it.isNotEmpty() }
     }
 
     /**

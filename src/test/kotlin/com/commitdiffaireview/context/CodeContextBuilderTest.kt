@@ -44,8 +44,9 @@ class CodeContextBuilderTest {
         assertTrue(result.containsKey("src/main/java/com/demo/OrderService.java"))
 
         val userLines = result["src/main/java/com/demo/UserService.java"]!!
-        assertTrue(userLines.contains(13)) // +    private int age;
-        assertTrue(userLines.contains(14)) // +    private boolean active;
+        assertTrue(userLines.contains(13)) // +    private String name;
+        assertTrue(userLines.contains(14)) // +    private int age;
+        assertTrue(userLines.contains(15)) // +    private boolean active;
 
         val orderLines = result["src/main/java/com/demo/OrderService.java"]!!
         assertTrue(orderLines.contains(22)) // +        validate();
