@@ -2,6 +2,8 @@ package com.commitdiffaireview.review
 
 import com.commitdiffaireview.ai.AIProvider
 import com.commitdiffaireview.ai.OpenAIProvider
+import com.commitdiffaireview.context.CodeContext
+import com.commitdiffaireview.context.CodeContextBuilder
 import com.commitdiffaireview.git.GitStagedDiffProvider
 import com.commitdiffaireview.model.AISettingsState
 import com.commitdiffaireview.model.ReviewFinding
@@ -56,12 +58,14 @@ class ReviewOrchestrator(
             client = OpenAIProvider.clientFor(settings)
         )
     },
-    private val onStatus: (String) -> Unit = {}
+    private val onStatus: (String) -> Unit = {},
+    private val contextBuilder: ((String) -> List<CodeContext>)? = null
 ) {
     constructor(project: Project, onStatus: (String) -> Unit = {}) : this(
         diffProvider = { GitStagedDiffProvider(project).getStagedDiff() },
         settingsProvider = { AIReviewSettingsService.getInstance().state },
-        onStatus = onStatus
+        onStatus = onStatus,
+        contextBuilder = { diff -> CodeContextBuilder(project).buildFromDiff(diff) }
     )
 
     fun reviewStagedDiff(): ReviewOutcome {
@@ -76,8 +80,21 @@ class ReviewOrchestrator(
             return ReviewOutcome.NeedsConfiguration
         }
 
+        // PSI Context 分析
+        val codeContexts = if (contextBuilder != null) {
+            onStatus("正在分析代码上下文...")
+            try {
+                contextBuilder(diff)
+            } catch (e: Exception) {
+                onStatus("PSI 分析失败，使用纯 diff 模式: ${e.message}")
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+
         onStatus("正在准备 Review 请求...")
-        val prompt = promptBuilder.build(diff)
+        val prompt = promptBuilder.build(diff, codeContexts)
         val provider = providerFactory(settings)
         onStatus("正在请求 AI，非流式模型可能需要等待一段时间...")
         val rawResponse = provider.review(prompt)
