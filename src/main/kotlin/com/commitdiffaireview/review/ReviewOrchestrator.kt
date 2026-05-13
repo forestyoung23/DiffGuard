@@ -8,7 +8,10 @@ import com.commitdiffaireview.git.GitStagedDiffProvider
 import com.commitdiffaireview.model.AISettingsState
 import com.commitdiffaireview.model.ReviewFinding
 import com.commitdiffaireview.settings.AIReviewSettingsService
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+
+private val LOG = Logger.getInstance(ReviewOrchestrator::class.java)
 
 sealed interface ReviewOutcome {
     data object NoChanges : ReviewOutcome
@@ -84,8 +87,11 @@ class ReviewOrchestrator(
         val codeContexts = if (contextBuilder != null) {
             onStatus("正在分析代码上下文...")
             try {
-                contextBuilder(diff)
+                val contexts = contextBuilder(diff)
+                logCodeContexts(contexts)
+                contexts
             } catch (e: Exception) {
+                LOG.warn("PSI 分析失败，使用纯 diff 模式", e)
                 onStatus("PSI 分析失败，使用纯 diff 模式: ${e.message}")
                 emptyList()
             }
@@ -95,6 +101,8 @@ class ReviewOrchestrator(
 
         onStatus("正在准备 Review 请求...")
         val prompt = promptBuilder.build(diff, codeContexts)
+        LOG.info("Prompt 长度: ${prompt.length}, 包含 PSI Context: ${codeContexts.isNotEmpty()}")
+
         val provider = providerFactory(settings)
         onStatus("正在请求 AI，非流式模型可能需要等待一段时间...")
         val rawResponse = provider.review(prompt)
@@ -102,6 +110,30 @@ class ReviewOrchestrator(
         return when (val parseResult = parser.tryParse(rawResponse)) {
             is ReviewParseResult.Parsed -> ReviewOutcome.Completed(parseResult.findings)
             is ReviewParseResult.Fallback -> ReviewOutcome.ParseFallback(parseResult.rawResponsePreview)
+        }
+    }
+
+    /**
+     * 输出 PSI 提取结果到日志，用于验证
+     * 查看方式：Help → Diagnostic Tools → Debug Log Settings → 添加 #com.commitdiffaireview
+     * 日志文件：~/.cache/JetBrains/IntelliJIdea<version>/log/idea.log
+     */
+    private fun logCodeContexts(contexts: List<CodeContext>) {
+        if (contexts.isEmpty()) {
+            LOG.info("PSI Context: 未提取到任何 Java 文件上下文")
+            return
+        }
+        LOG.info("PSI Context: 提取到 ${contexts.size} 个文件的上下文")
+        for (ctx in contexts) {
+            LOG.info("  文件: ${ctx.filePath}")
+            LOG.info("    类: ${ctx.className}, 包: ${ctx.packageName}")
+            LOG.info("    注解: ${ctx.annotations}")
+            LOG.info("    Spring: ${ctx.springSemantic}")
+            LOG.info("    依赖: ${ctx.dependencies.map { "${it.fieldName}:${it.typeName}[${it.injectionType}]" }}")
+            LOG.info("    修改方法: ${ctx.modifiedMethods.size} 个")
+            for (method in ctx.modifiedMethods) {
+                LOG.info("      ${method.signature} -> ${method.methodCalls.map { "${it.qualifier}.${it.methodName}[${it.callType}]" }}")
+            }
         }
     }
 }
