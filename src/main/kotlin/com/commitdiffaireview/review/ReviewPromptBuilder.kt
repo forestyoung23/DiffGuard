@@ -52,9 +52,11 @@ class ReviewPromptBuilder {
                         if (method.annotations.isNotEmpty()) {
                             appendLine("  Annotations: ${method.annotations.joinToString(", ")}")
                         }
-                        if (method.methodCalls.isNotEmpty()) {
+                        // 只显示有意义的基础设施调用，过滤掉 UNKNOWN
+                        val significantCalls = method.methodCalls.filter { it.callType != "UNKNOWN" }
+                        if (significantCalls.isNotEmpty()) {
                             appendLine("  Calls:")
-                            for (call in method.methodCalls) {
+                            for (call in significantCalls) {
                                 val callDesc = if (call.qualifier.isNotEmpty()) {
                                     "${call.qualifier}.${call.methodName}"
                                 } else {

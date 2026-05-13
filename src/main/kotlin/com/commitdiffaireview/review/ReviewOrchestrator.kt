@@ -132,7 +132,8 @@ class ReviewOrchestrator(
             LOG.info("    依赖: ${ctx.dependencies.map { "${it.fieldName}:${it.typeName}[${it.injectionType}]" }}")
             LOG.info("    修改方法: ${ctx.modifiedMethods.size} 个")
             for (method in ctx.modifiedMethods) {
-                LOG.info("      ${method.signature} -> ${method.methodCalls.map { "${it.qualifier}.${it.methodName}[${it.callType}]" }}")
+                val significantCalls = method.methodCalls.filter { it.callType != "UNKNOWN" }
+                LOG.info("      ${method.signature} -> ${significantCalls.map { "${it.qualifier}.${it.methodName}[${it.callType}]" }}")
             }
         }
     }
