@@ -38,10 +38,12 @@ class ReviewUiStateRendererTest {
 
     @Test
     fun `renders reviewing state with progress message`() {
-        val text = visibleTextIn(renderer.render(ReviewUiState.Reviewing("正在读取本次变更...")))
+        val text = visibleTextIn(renderer.render(ReviewUiState.Reviewing("正在请求 AI，非流式模型可能需要等待一段时间...")))
 
         assertTrue(text.contains("AI Review 进行中"), text)
-        assertTrue(text.contains("正在读取本次变更..."), text)
+        assertTrue(text.contains("正在请求 AI，非流式模型可能需要等待一段时间..."), text)
+        assertTrue(text.contains("请稍候，Review 完成后会自动显示结果。"), text)
+        assertTrue(!text.contains("请保持当前窗口打开，非流式模型可能需要等待一段时间。"), text)
     }
 
     @Test

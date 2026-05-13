@@ -29,7 +29,7 @@ internal class AIReviewResultPanelRenderer {
         is ReviewUiState.Reviewing -> renderInfoState(
             title = "AI Review 进行中",
             detail = state.message,
-            nextStep = "请保持当前窗口打开，非流式模型可能需要等待一段时间。"
+            nextStep = "请稍候，Review 完成后会自动显示结果。"
         )
         is ReviewUiState.Completed -> renderFindings(state.findings)
         is ReviewUiState.Failed -> renderInfoState(state.title, state.detail, state.nextStep)
