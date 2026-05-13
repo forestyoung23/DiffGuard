@@ -6,10 +6,12 @@ import com.commitdiffaireview.psi.MethodCallExtractor
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiMethod
+import git4idea.GitUtil
 
 /**
  * 解析 unified diff 文本，提取每个 Java 文件的修改行号集合
@@ -31,6 +33,13 @@ object DiffParser {
                 // 匹配 diff --git a/path b/path
                 line.startsWith("diff --git ") -> {
                     currentFile = extractFilePath(line)
+                    if (currentFile != null && !currentFile.endsWith(".java")) {
+                        currentFile = null
+                    }
+                }
+                // 优先以新文件路径为准，兼容 rename、new file、路径中包含空格等场景
+                line.startsWith("+++ ") -> {
+                    currentFile = extractNewFilePath(line)
                     if (currentFile != null && !currentFile.endsWith(".java")) {
                         currentFile = null
                     }
@@ -62,10 +71,54 @@ object DiffParser {
      * 从 diff --git a/path b/path 中提取文件路径（取 b/ 后面的部分）
      */
     private fun extractFilePath(line: String): String? {
-        val parts = line.split(" ")
-        if (parts.size < 4) return null
-        val bPath = parts.lastOrNull() ?: return null
-        return if (bPath.startsWith("b/")) bPath.substring(2) else bPath
+        val tokens = parseGitPathTokens(line.removePrefix("diff --git ").trim())
+        return tokens.getOrNull(1)?.normalizeDiffPath()
+    }
+
+    /**
+     * 从 +++ b/path 中提取新文件路径。/dev/null 表示删除文件，没有新文件上下文。
+     */
+    private fun extractNewFilePath(line: String): String? {
+        val rawPath = parseGitPathTokens(line.removePrefix("+++ ").trim()).firstOrNull() ?: return null
+        return rawPath.takeUnless { it == "/dev/null" }?.normalizeDiffPath()
+    }
+
+    private fun String.normalizeDiffPath(): String =
+        removePrefix("a/").removePrefix("b/")
+
+    private fun parseGitPathTokens(text: String): List<String> {
+        val tokens = mutableListOf<String>()
+        var index = 0
+        while (index < text.length) {
+            while (index < text.length && text[index].isWhitespace()) {
+                index++
+            }
+            if (index >= text.length) break
+
+            val token = StringBuilder()
+            if (text[index] == '"') {
+                index++
+                var escaped = false
+                while (index < text.length) {
+                    val char = text[index++]
+                    when {
+                        escaped -> {
+                            token.append(char)
+                            escaped = false
+                        }
+                        char == '\\' -> escaped = true
+                        char == '"' -> break
+                        else -> token.append(char)
+                    }
+                }
+            } else {
+                while (index < text.length && !text[index].isWhitespace()) {
+                    token.append(text[index++])
+                }
+            }
+            tokens.add(token.toString())
+        }
+        return tokens
     }
 
     /**
@@ -111,11 +164,7 @@ class CodeContextBuilder(private val project: Project) {
      * 分析单个 Java 文件，构建 CodeContext
      */
     private fun analyzeFile(relativePath: String, modifiedLines: Set<Int>): CodeContext? {
-        val basePath = project.basePath ?: return null
-        val absolutePath = "$basePath/$relativePath"
-
-        // 通过 LocalFileSystem 查找 VirtualFile
-        val virtualFile = LocalFileSystem.getInstance().findFileByPath(absolutePath) ?: return null
+        val virtualFile = findVirtualFile(relativePath) ?: return null
 
         // 通过 PsiManager 获取 PsiFile
         val psiFile = PsiManager.getInstance(project).findFile(virtualFile) as? PsiJavaFile ?: return null
@@ -190,5 +239,19 @@ class CodeContextBuilder(private val project: Project) {
             "${param.type.presentableText} ${param.name}"
         }
         return "${method.name}($params)"
+    }
+
+    private fun findVirtualFile(relativePath: String): VirtualFile? {
+        val normalizedRelativePath = relativePath.trimStart('/')
+        val roots = buildList {
+            project.basePath?.let { add(it) }
+            GitUtil.getRepositoryManager(project).repositories
+                .map { it.root.path }
+                .forEach { add(it) }
+        }.distinct()
+
+        return roots.firstNotNullOfOrNull { root ->
+            LocalFileSystem.getInstance().findFileByPath("$root/$normalizedRelativePath")
+        }
     }
 }

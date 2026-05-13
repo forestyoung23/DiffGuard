@@ -16,7 +16,7 @@ CommitDiffAIReview 是一个 IntelliJ IDEA 2024+ 插件 MVP，用于在提交代
 打开 `Settings / Tools / CommitDiffAIReview`，配置：
 
 - `Base URL`：OpenAI Compatible API 地址，默认 `https://api.openai.com/v1`
-- `API Key`：API Key
+- `API Key`：API Key，会保存到 IntelliJ PasswordSafe；设置页留空表示保留已保存的 Key
 - `Model`：模型名称，默认 `gpt-4o-mini`
 
 ## 使用方式
@@ -29,19 +29,19 @@ CommitDiffAIReview 是一个 IntelliJ IDEA 2024+ 插件 MVP，用于在提交代
 ## 本地运行
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle runIde
+JAVA_HOME="/path/to/jdk-17" ./gradlew runIde
 ```
 
 ## 测试
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle test
+JAVA_HOME="/path/to/jdk-17" ./gradlew test
 ```
 
 ## 构建插件
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle buildPlugin
+JAVA_HOME="/path/to/jdk-17" ./gradlew buildPlugin
 ```
 
 ## MVP 不包含

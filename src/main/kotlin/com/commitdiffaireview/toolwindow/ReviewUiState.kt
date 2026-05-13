@@ -13,8 +13,8 @@ sealed interface ReviewUiState {
 
     data class NoChanges(
         val title: String = "没有可 Review 的变更",
-        val detail: String = "当前 diff 为空，因此无需调用 AI。",
-        val nextStep: String = "请先修改代码，或确认当前 Review 范围是否符合预期。"
+        val detail: String = "当前 staged diff 为空，因此无需调用 AI。",
+        val nextStep: String = "请先 stage 需要审查的文件，或确认当前 Review 范围是否符合预期。"
     ) : ReviewUiState
 
     data class Reviewing(

@@ -42,7 +42,7 @@ class OpenAIProvider(
                 error("AI 服务返回了 HTML 页面，请检查 Base URL 是否为 OpenAI Compatible API 地址（通常以 /v1 结尾），不要填写 new-api 管理后台页面地址。")
             }
             if (!response.isSuccessful) {
-                error("AI Review 请求失败：HTTP ${response.code} $responseBody")
+                error("AI Review 请求失败：HTTP ${response.code} ${responseBodyPreview(responseBody)}")
             }
 
             val chatResponse = json.decodeFromString<OpenAIChatResponse>(responseBody)
@@ -56,8 +56,16 @@ class OpenAIProvider(
     private fun chatCompletionsUrl(): String =
         baseUrl.trimEnd('/') + "/chat/completions"
 
+    private fun responseBodyPreview(responseBody: String): String =
+        if (responseBody.length <= MAX_ERROR_BODY_CHARS) {
+            responseBody
+        } else {
+            responseBody.take(MAX_ERROR_BODY_CHARS) + "...[truncated]"
+        }
+
     companion object {
         private const val JSON_MEDIA_TYPE = "application/json"
+        private const val MAX_ERROR_BODY_CHARS = 2_000
 
         fun defaultClient(): OkHttpClient = clientFor(AISettingsState())
 

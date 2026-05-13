@@ -33,7 +33,7 @@ class ReviewUiStateRendererTest {
         val text = visibleTextIn(renderer.render(ReviewUiState.NoChanges()))
 
         assertTrue(text.contains("没有可 Review 的变更"), text)
-        assertTrue(text.contains("当前 diff 为空"), text)
+        assertTrue(text.contains("当前 staged diff 为空"), text)
     }
 
     @Test

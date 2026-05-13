@@ -30,31 +30,72 @@ class ReviewResultParser {
     }
 
     fun tryParse(rawResponse: String): ReviewParseResult {
-        val candidate = extractJsonArray(rawResponse)
-        return runCatching {
-            ReviewParseResult.Parsed(json.decodeFromString<List<ReviewFinding>>(candidate))
-        }.getOrElse {
-            ReviewParseResult.Fallback(rawResponsePreview = rawResponse.trim().take(1_000))
+        for (candidate in jsonArrayCandidates(rawResponse).distinct()) {
+            val parsed = runCatching {
+                ReviewParseResult.Parsed(json.decodeFromString<List<ReviewFinding>>(candidate))
+            }.getOrNull()
+            if (parsed != null) {
+                return parsed
+            }
         }
+        return ReviewParseResult.Fallback(rawResponsePreview = rawResponse.trim().take(1_000))
     }
 
-    private fun extractJsonArray(rawResponse: String): String {
+    private fun jsonArrayCandidates(rawResponse: String): List<String> {
         val trimmed = rawResponse.trim()
+        val candidates = mutableListOf<String>()
         if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-            return trimmed
+            candidates.add(trimmed)
         }
 
-        val fenced = Regex("```(?:json)?\\s*([\\s\\S]*?)\\s*```", RegexOption.IGNORE_CASE)
-            .find(trimmed)
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.trim()
-        if (fenced != null && fenced.startsWith("[")) {
-            return fenced
-        }
+        Regex("```(?:json)?\\s*([\\s\\S]*?)\\s*```", RegexOption.IGNORE_CASE)
+            .findAll(trimmed)
+            .mapNotNull { it.groupValues.getOrNull(1)?.trim() }
+            .filter { it.startsWith("[") }
+            .forEach { candidates.add(it) }
 
-        val start = trimmed.indexOf('[')
-        val end = trimmed.lastIndexOf(']')
-        return if (start >= 0 && end > start) trimmed.substring(start, end + 1) else trimmed
+        candidates.addAll(extractBalancedArrays(trimmed))
+        candidates.add(trimmed)
+        return candidates
+    }
+
+    private fun extractBalancedArrays(text: String): List<String> {
+        val arrays = mutableListOf<String>()
+        for (index in text.indices) {
+            if (text[index] == '[') {
+                extractArrayAt(text, index)?.let { arrays.add(it) }
+            }
+        }
+        return arrays
+    }
+
+    private fun extractArrayAt(text: String, startIndex: Int): String? {
+        var depth = 0
+        var inString = false
+        var escaped = false
+
+        for (index in startIndex until text.length) {
+            val char = text[index]
+            if (inString) {
+                when {
+                    escaped -> escaped = false
+                    char == '\\' -> escaped = true
+                    char == '"' -> inString = false
+                }
+                continue
+            }
+
+            when (char) {
+                '"' -> inString = true
+                '[' -> depth++
+                ']' -> {
+                    depth--
+                    if (depth == 0) {
+                        return text.substring(startIndex, index + 1)
+                    }
+                }
+            }
+        }
+        return null
     }
 }

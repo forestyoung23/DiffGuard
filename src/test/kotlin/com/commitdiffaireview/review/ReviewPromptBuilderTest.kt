@@ -106,4 +106,38 @@ class ReviewPromptBuilderTest {
         assertTrue(prompt.contains("UserService"))
         assertTrue(prompt.contains("OrderController"))
     }
+
+    @Test
+    fun `prompt truncates oversized diff with explicit notice`() {
+        val prompt = ReviewPromptBuilder(PromptBudget(maxDiffChars = 20, maxContextChars = 100))
+            .build("diff --git a/Foo.java b/Foo.java\n" + "x".repeat(100), emptyList())
+
+        assertTrue(prompt.contains("diff --git a/Foo.ja"))
+        assertFalse(prompt.contains("x".repeat(80)))
+        assertTrue(prompt.contains("[Truncated: original"))
+    }
+
+    @Test
+    fun `prompt truncates oversized code context separately from diff`() {
+        val contexts = listOf(
+            CodeContext(
+                filePath = "src/UserService.java",
+                packageName = "com.demo",
+                className = "UserService",
+                superClass = null,
+                interfaces = List(50) { "Interface$it" },
+                annotations = emptyList(),
+                dependencies = emptyList(),
+                springSemantic = SpringSemantic.NONE,
+                modifiedMethods = emptyList()
+            )
+        )
+
+        val prompt = ReviewPromptBuilder(PromptBudget(maxDiffChars = 100, maxContextChars = 40))
+            .build("diff", contexts)
+
+        assertTrue(prompt.contains("## Code Context"))
+        assertTrue(prompt.contains("[Truncated: original"))
+        assertTrue(prompt.contains("```diff\ndiff\n```"))
+    }
 }

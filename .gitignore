@@ -4,6 +4,3 @@ build/
 .intellijPlatform/
 .idea/
 .superpowers/
-gradle/
-gradlew
-gradlew.bat

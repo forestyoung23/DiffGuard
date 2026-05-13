@@ -8,48 +8,28 @@ import com.commitdiffaireview.toolwindow.ReviewUiState
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
 class AIReviewAction : AnAction("AI Review") {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val errorPresenter = ReviewErrorPresenter()
 
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.project ?: return
         val toolWindowService = project.service<AIReviewToolWindowService>()
 
-        scope.launch(Dispatchers.Main) {
-            ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.show()
-            toolWindowService.showState(ReviewUiState.Reviewing("正在读取本次变更..."))
-
-            val result = runCatching {
-                withContext(Dispatchers.IO) {
-                    ReviewOrchestrator(
-                        project = project,
-                        onStatus = { status ->
-                            runBlocking {
-                                withContext(Dispatchers.Main) {
-                                    toolWindowService.showState(ReviewUiState.Reviewing(status))
-                                }
-                            }
-                        }
-                    ).reviewStagedDiff()
-                }
-            }
-
-            result.fold(
-                onSuccess = { outcome -> toolWindowService.showState(outcome.toUiState()) },
-                onFailure = { error -> toolWindowService.showState(errorPresenter.present(error)) }
-            )
+        ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.show()
+        if (!toolWindowService.tryStartReview()) {
+            toolWindowService.showState(ReviewUiState.Reviewing("AI Review 已在进行中，请等待当前任务完成。"))
+            return
         }
+
+        toolWindowService.showState(ReviewUiState.Reviewing("正在读取本次变更..."))
+        ReviewTask(project, toolWindowService).queue()
     }
 
     override fun update(event: AnActionEvent) {
@@ -63,6 +43,58 @@ class AIReviewAction : AnAction("AI Review") {
         ReviewOutcome.NeedsConfiguration -> ReviewUiState.NeedsConfiguration()
         is ReviewOutcome.Completed -> ReviewUiState.Completed(findings)
         is ReviewOutcome.ParseFallback -> ReviewUiState.ParseFallback(rawResponsePreview = rawResponsePreview)
+    }
+
+    private inner class ReviewTask(
+        private val taskProject: Project,
+        private val toolWindowService: AIReviewToolWindowService
+    ) : Task.Backgroundable(taskProject, "AI Review staged changes", false) {
+        private var outcome: ReviewOutcome? = null
+
+        override fun run(indicator: ProgressIndicator) {
+            indicator.isIndeterminate = true
+            outcome = ReviewOrchestrator(
+                project = taskProject,
+                onStatus = { status ->
+                    indicator.text = status
+                    showReviewingStatus(taskProject, toolWindowService, status)
+                }
+            ).reviewStagedDiff()
+        }
+
+        override fun onSuccess() {
+            outcome?.let { toolWindowService.showState(it.toUiState()) }
+        }
+
+        override fun onThrowable(error: Throwable) {
+            toolWindowService.showState(errorPresenter.present(error))
+        }
+
+        override fun onCancel() {
+            toolWindowService.showState(
+                ReviewUiState.Failed(
+                    title = "AI Review 已取消",
+                    detail = "当前审查任务已取消。",
+                    nextStep = "如需重新审查，请再次点击 AI Review。"
+                )
+            )
+        }
+
+        override fun onFinished() {
+            toolWindowService.finishReview()
+        }
+    }
+
+    private fun showReviewingStatus(
+        project: Project,
+        toolWindowService: AIReviewToolWindowService,
+        status: String
+    ) {
+        ApplicationManager.getApplication().invokeLater {
+            if (!project.isDisposed) {
+                toolWindowService.showState(ReviewUiState.Reviewing(status))
+            }
+        }
     }
 
     private companion object {

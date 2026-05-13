@@ -11,6 +11,7 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Point
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -73,6 +74,13 @@ class AIReviewToolWindowView {
 @Service(Service.Level.PROJECT)
 class AIReviewToolWindowService {
     var view: AIReviewToolWindowView? = null
+    private val reviewRunning = AtomicBoolean(false)
+
+    fun tryStartReview(): Boolean = reviewRunning.compareAndSet(false, true)
+
+    fun finishReview() {
+        reviewRunning.set(false)
+    }
 
     fun showState(state: ReviewUiState) {
         view?.showState(state)

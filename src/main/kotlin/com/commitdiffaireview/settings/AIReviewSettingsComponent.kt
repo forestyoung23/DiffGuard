@@ -3,12 +3,13 @@ package com.commitdiffaireview.settings
 import com.commitdiffaireview.model.AISettingsState
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.bindIntText
+import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import javax.swing.JComponent
 
 class AIReviewSettingsComponent {
-    private val settings = AISettingsState()
+    private val settings = FormState()
     private val panel: DialogPanel = panel {
         group("Provider 配置") {
             row("Base URL") {
@@ -19,12 +20,16 @@ class AIReviewSettingsComponent {
             row("API Key") {
                 passwordField()
                     .bindText(settings::apiKey)
-                    .comment("Required to call the provider")
+                    .comment("Leave blank to keep the stored key. Enter a new key to replace it.")
             }
             row("Model") {
                 textField()
                     .bindText(settings::model)
                     .comment("Model name supported by your provider")
+            }
+            row {
+                checkBox("Clear stored API Key")
+                    .bindSelected(settings::clearStoredApiKey)
             }
         }
         group("Advanced / 超时配置") {
@@ -47,25 +52,48 @@ class AIReviewSettingsComponent {
 
     fun isModified(): Boolean = panel.isModified()
 
-    fun applyTo(state: AISettingsState) {
+    fun applyTo(service: AIReviewSettingsService) {
         panel.apply()
-        state.baseUrl = settings.baseUrl.trim()
-        state.apiKey = settings.apiKey
-        state.model = settings.model.trim()
-        state.connectTimeoutSeconds = settings.connectTimeoutSeconds
-        state.writeTimeoutSeconds = settings.writeTimeoutSeconds
-        state.readTimeoutSeconds = settings.readTimeoutSeconds
-        state.callTimeoutSeconds = settings.callTimeoutSeconds
+        val nextState = AISettingsState(
+            baseUrl = settings.baseUrl.trim(),
+            apiKey = "",
+            model = settings.model.trim(),
+            connectTimeoutSeconds = settings.connectTimeoutSeconds,
+            writeTimeoutSeconds = settings.writeTimeoutSeconds,
+            readTimeoutSeconds = settings.readTimeoutSeconds,
+            callTimeoutSeconds = settings.callTimeoutSeconds
+        )
+        val apiKeyUpdate = when {
+            settings.apiKey.isNotBlank() -> ApiKeyUpdate.Replace(settings.apiKey.trim())
+            settings.clearStoredApiKey -> ApiKeyUpdate.Clear
+            else -> ApiKeyUpdate.Keep
+        }
+        service.updateSettings(nextState, apiKeyUpdate)
+        settings.apiKey = ""
+        settings.clearStoredApiKey = false
+        panel.reset()
     }
 
     fun resetFrom(state: AISettingsState) {
         settings.baseUrl = state.baseUrl
-        settings.apiKey = state.apiKey
+        settings.apiKey = ""
         settings.model = state.model
         settings.connectTimeoutSeconds = state.connectTimeoutSeconds
         settings.writeTimeoutSeconds = state.writeTimeoutSeconds
         settings.readTimeoutSeconds = state.readTimeoutSeconds
         settings.callTimeoutSeconds = state.callTimeoutSeconds
+        settings.clearStoredApiKey = false
         panel.reset()
     }
+
+    private data class FormState(
+        var baseUrl: String = "https://api.openai.com/v1",
+        var apiKey: String = "",
+        var model: String = "gpt-4o-mini",
+        var connectTimeoutSeconds: Int = 30,
+        var writeTimeoutSeconds: Int = 60,
+        var readTimeoutSeconds: Int = 300,
+        var callTimeoutSeconds: Int = 360,
+        var clearStoredApiKey: Boolean = false
+    )
 }

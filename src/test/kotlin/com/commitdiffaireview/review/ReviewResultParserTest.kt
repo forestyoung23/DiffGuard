@@ -88,4 +88,29 @@ class ReviewResultParserTest {
         assertEquals("not json", fallback.rawResponsePreview)
         assertEquals("AI 返回内容无法解析为结构化结果。", fallback.message)
     }
+
+    @Test
+    fun `tryParse skips earlier invalid bracketed text and parses later json array`() {
+        val result = parser.tryParse(
+            """
+            Model notes: [not json]
+            Review result:
+            [{"level":"LOW","file":"A.kt","line":1,"message":"建议补充测试"}]
+            """.trimIndent()
+        )
+
+        val parsed = result as ReviewParseResult.Parsed
+        assertEquals(1, parsed.findings.size)
+        assertEquals("A.kt", parsed.findings[0].file)
+    }
+
+    @Test
+    fun `tryParse handles brackets inside json strings`() {
+        val result = parser.tryParse(
+            """[{"level":"LOW","file":"A.kt","line":1,"message":"数组文本 [a, b] 不应截断 JSON"}]"""
+        )
+
+        val parsed = result as ReviewParseResult.Parsed
+        assertEquals("数组文本 [a, b] 不应截断 JSON", parsed.findings[0].message)
+    }
 }

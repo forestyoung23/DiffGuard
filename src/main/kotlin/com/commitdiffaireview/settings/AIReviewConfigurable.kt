@@ -11,7 +11,7 @@ class AIReviewConfigurable : Configurable {
     override fun createComponent(): JComponent {
         val settingsComponent = AIReviewSettingsComponent()
         component = settingsComponent
-        settingsComponent.resetFrom(AIReviewSettingsService.getInstance().state)
+        settingsComponent.resetFrom(AIReviewSettingsService.getInstance().nonSecretState())
         return settingsComponent.getPanel()
     }
 
@@ -19,11 +19,11 @@ class AIReviewConfigurable : Configurable {
         component?.isModified() ?: false
 
     override fun apply() {
-        component?.applyTo(AIReviewSettingsService.getInstance().state)
+        component?.applyTo(AIReviewSettingsService.getInstance())
     }
 
     override fun reset() {
-        component?.resetFrom(AIReviewSettingsService.getInstance().state)
+        component?.resetFrom(AIReviewSettingsService.getInstance().nonSecretState())
     }
 
     override fun disposeUIResources() {

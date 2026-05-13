@@ -137,4 +137,40 @@ class CodeContextBuilderTest {
         // +added2 is at new line 6
         assertTrue(lines.contains(6))
     }
+
+    @Test
+    fun `parse diff handles quoted Java file paths with spaces`() {
+        val diff = """
+            diff --git "a/src/main/java/com/demo/User Service.java" "b/src/main/java/com/demo/User Service.java"
+            index 1234567..abcdefg 100644
+            --- "a/src/main/java/com/demo/User Service.java"
+            +++ "b/src/main/java/com/demo/User Service.java"
+            @@ -3,3 +3,4 @@
+              class UserService {
+            +     private String name;
+              }
+        """.trimIndent()
+
+        val result = DiffParser.parse(diff)
+
+        assertEquals(setOf(4), result["src/main/java/com/demo/User Service.java"])
+    }
+
+    @Test
+    fun `parse diff ignores deleted Java files for PSI context`() {
+        val diff = """
+            diff --git a/src/main/java/com/demo/Deleted.java b/src/main/java/com/demo/Deleted.java
+            deleted file mode 100644
+            index 1234567..0000000
+            --- a/src/main/java/com/demo/Deleted.java
+            +++ /dev/null
+            @@ -1,3 +0,0 @@
+            -class Deleted {
+            -}
+        """.trimIndent()
+
+        val result = DiffParser.parse(diff)
+
+        assertTrue(result.isEmpty())
+    }
 }

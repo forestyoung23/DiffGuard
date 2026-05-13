@@ -4,6 +4,7 @@ import com.commitdiffaireview.ai.AIProvider
 import com.commitdiffaireview.ai.OpenAIProvider
 import com.commitdiffaireview.context.CodeContext
 import com.commitdiffaireview.context.CodeContextBuilder
+import com.commitdiffaireview.context.DiffParser
 import com.commitdiffaireview.git.GitStagedDiffProvider
 import com.commitdiffaireview.model.AISettingsState
 import com.commitdiffaireview.model.ReviewFinding
@@ -26,7 +27,7 @@ fun ReviewOutcome.compatibilityFindings(): List<ReviewFinding> = when (this) {
             level = "LOW",
             file = "Git",
             line = null,
-            message = "没有可 Review 的变更。工作区与 HEAD 完全一致，无需 Review。"
+            message = "没有可 Review 的 staged 变更。请先 stage 需要审查的文件。"
         )
     )
     ReviewOutcome.NeedsConfiguration -> listOf(
@@ -66,9 +67,9 @@ class ReviewOrchestrator(
 ) {
     constructor(project: Project, onStatus: (String) -> Unit = {}) : this(
         diffProvider = { GitStagedDiffProvider(project).getStagedDiff() },
-        settingsProvider = { AIReviewSettingsService.getInstance().state },
+        settingsProvider = { AIReviewSettingsService.getInstance().stateWithSecrets() },
         onStatus = onStatus,
-        contextBuilder = { diff -> CodeContextBuilder(project).buildFromDiff(diff) }
+        contextBuilder = { diff -> buildStagedSafeCodeContext(project, diff) }
     )
 
     fun reviewStagedDiff(): ReviewOutcome {
@@ -135,6 +136,19 @@ class ReviewOrchestrator(
                 val significantCalls = method.methodCalls.filter { it.callType != "UNKNOWN" }
                 LOG.info("      ${method.signature} -> ${significantCalls.map { "${it.qualifier}.${it.methodName}[${it.callType}]" }}")
             }
+        }
+    }
+
+    private companion object {
+        fun buildStagedSafeCodeContext(project: Project, diff: String): List<CodeContext> {
+            val stagedPaths = DiffParser.parse(diff).keys
+            if (stagedPaths.isEmpty()) return emptyList()
+
+            val unstagedStagedPaths = GitStagedDiffProvider(project)
+                .getUnstagedChangedPaths()
+                .intersect(stagedPaths)
+            val contexts = CodeContextBuilder(project).buildFromDiff(diff)
+            return contexts.filterNot { it.filePath in unstagedStagedPaths }
         }
     }
 }

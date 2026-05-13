@@ -83,6 +83,28 @@ class OpenAIProviderTest {
         )
     }
 
+    @Test
+    fun `truncates long unsuccessful response body in error message`() {
+        val provider = OpenAIProvider(
+            baseUrl = "https://api.example.com/v1",
+            apiKey = "test-key",
+            model = "test-model",
+            client = clientReturning(
+                code = 500,
+                contentType = "application/json",
+                body = "x".repeat(3_000)
+            )
+        )
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            provider.review("review this diff")
+        }
+
+        assertTrue(error.message.orEmpty().contains("HTTP 500"))
+        assertTrue(error.message.orEmpty().contains("...[truncated]"))
+        assertTrue(error.message.orEmpty().length < 2_100)
+    }
+
     private fun clientReturning(code: Int, contentType: String, body: String): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor { chain ->
