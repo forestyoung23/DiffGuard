@@ -16,7 +16,7 @@ CommitDiffAIReview 是一个 IntelliJ IDEA 2024+ 插件 MVP，用于在提交代
 打开 `Settings / Tools / CommitDiffAIReview`，配置：
 
 - `Base URL`：OpenAI Compatible API 地址，默认 `https://api.openai.com/v1`
-- `API Key`：API Key，会保存到 IntelliJ PasswordSafe；设置页留空表示保留已保存的 Key
+- `API Key`：API Key，会保存到 IntelliJ PasswordSafe；设置页会以密码形式隐藏已保存的 Key，清空后保存会删除 Key
 - `Model`：模型名称，默认 `gpt-4o-mini`
 
 ## 使用方式

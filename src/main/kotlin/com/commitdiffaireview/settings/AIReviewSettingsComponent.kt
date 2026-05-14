@@ -3,33 +3,27 @@ package com.commitdiffaireview.settings
 import com.commitdiffaireview.model.AISettingsState
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.bindIntText
-import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import javax.swing.JComponent
 
 class AIReviewSettingsComponent {
-    private val settings = FormState()
+    private val settings = AISettingsState()
     private val panel: DialogPanel = panel {
         group("Provider 配置") {
             row("Base URL") {
                 textField()
                     .bindText(settings::baseUrl)
-                    .comment("OpenAI-compatible API base URL, e.g. https://api.openai.com/v1")
             }
             row("API Key") {
-                passwordField()
+                val apiKeyField = passwordField()
                     .bindText(settings::apiKey)
-                    .comment("Leave blank to keep the stored key. Enter a new key to replace it.")
+                    .component
+                apiKeyField.echoChar = '\u2022'
             }
             row("Model") {
                 textField()
                     .bindText(settings::model)
-                    .comment("Model name supported by your provider")
-            }
-            row {
-                checkBox("Clear stored API Key")
-                    .bindSelected(settings::clearStoredApiKey)
             }
         }
         group("Advanced / 超时配置") {
@@ -54,6 +48,7 @@ class AIReviewSettingsComponent {
 
     fun applyTo(service: AIReviewSettingsService) {
         panel.apply()
+        settings.apiKey = settings.apiKey.trim()
         val nextState = AISettingsState(
             baseUrl = settings.baseUrl.trim(),
             apiKey = "",
@@ -64,36 +59,21 @@ class AIReviewSettingsComponent {
             callTimeoutSeconds = settings.callTimeoutSeconds
         )
         val apiKeyUpdate = when {
-            settings.apiKey.isNotBlank() -> ApiKeyUpdate.Replace(settings.apiKey.trim())
-            settings.clearStoredApiKey -> ApiKeyUpdate.Clear
-            else -> ApiKeyUpdate.Keep
+            settings.apiKey.isBlank() -> ApiKeyUpdate.Clear
+            else -> ApiKeyUpdate.Replace(settings.apiKey)
         }
         service.updateSettings(nextState, apiKeyUpdate)
-        settings.apiKey = ""
-        settings.clearStoredApiKey = false
         panel.reset()
     }
 
     fun resetFrom(state: AISettingsState) {
         settings.baseUrl = state.baseUrl
-        settings.apiKey = ""
+        settings.apiKey = state.apiKey
         settings.model = state.model
         settings.connectTimeoutSeconds = state.connectTimeoutSeconds
         settings.writeTimeoutSeconds = state.writeTimeoutSeconds
         settings.readTimeoutSeconds = state.readTimeoutSeconds
         settings.callTimeoutSeconds = state.callTimeoutSeconds
-        settings.clearStoredApiKey = false
         panel.reset()
     }
-
-    private data class FormState(
-        var baseUrl: String = "https://api.openai.com/v1",
-        var apiKey: String = "",
-        var model: String = "gpt-4o-mini",
-        var connectTimeoutSeconds: Int = 30,
-        var writeTimeoutSeconds: Int = 60,
-        var readTimeoutSeconds: Int = 300,
-        var callTimeoutSeconds: Int = 360,
-        var clearStoredApiKey: Boolean = false
-    )
 }

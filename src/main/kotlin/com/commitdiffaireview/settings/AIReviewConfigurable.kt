@@ -9,9 +9,10 @@ class AIReviewConfigurable : Configurable {
     override fun getDisplayName(): String = "CommitDiffAIReview"
 
     override fun createComponent(): JComponent {
+        val service = AIReviewSettingsService.getInstance()
         val settingsComponent = AIReviewSettingsComponent()
         component = settingsComponent
-        settingsComponent.resetFrom(AIReviewSettingsService.getInstance().nonSecretState())
+        settingsComponent.resetFrom(service.stateWithSecrets())
         return settingsComponent.getPanel()
     }
 
@@ -23,7 +24,8 @@ class AIReviewConfigurable : Configurable {
     }
 
     override fun reset() {
-        component?.resetFrom(AIReviewSettingsService.getInstance().nonSecretState())
+        val service = AIReviewSettingsService.getInstance()
+        component?.resetFrom(service.stateWithSecrets())
     }
 
     override fun disposeUIResources() {
