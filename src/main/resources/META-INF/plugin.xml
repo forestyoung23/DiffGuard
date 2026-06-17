@@ -1,7 +1,7 @@
 <idea-plugin>
-    <id>com.commitdiffaireview</id>
-    <name>CommitDiffAIReview</name>
-    <vendor>CommitDiffAIReview</vendor>
+    <id>dev.diffguard</id>
+    <name>DiffGuard</name>
+    <vendor>DiffGuard</vendor>
 
     <description><![CDATA[
         Review staged git diffs with an OpenAI-compatible API before commit.
@@ -13,20 +13,20 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow
-            id="AI Review"
+            id="DiffGuard"
             anchor="right"
-            factoryClass="com.commitdiffaireview.toolwindow.AIReviewToolWindowFactory" />
+            factoryClass="dev.diffguard.toolwindow.AIReviewToolWindowFactory" />
         <applicationConfigurable
             parentId="tools"
-            instance="com.commitdiffaireview.settings.AIReviewConfigurable"
-            displayName="CommitDiffAIReview" />
+            instance="dev.diffguard.settings.AIReviewConfigurable"
+            displayName="DiffGuard" />
     </extensions>
 
     <actions>
         <action
-            id="CommitDiffAIReview.AIReviewAction"
-            class="com.commitdiffaireview.action.AIReviewAction"
-            text="AI Review"
+            id="DiffGuard.AIReviewAction"
+            class="dev.diffguard.action.AIReviewAction"
+            text="Review with DiffGuard"
             description="Review staged changes with AI">
             <add-to-group group-id="Vcs.MessageActionGroup" anchor="last" />
             <add-to-group group-id="ChangesViewPopupMenu" anchor="last" />

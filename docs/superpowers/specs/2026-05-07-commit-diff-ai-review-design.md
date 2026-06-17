@@ -1,10 +1,10 @@
-# CommitDiffAIReview MVP 设计文档
+# DiffGuard MVP 设计文档
 
 日期：2026-05-07
 
 ## 目标
 
-构建一个名为 `CommitDiffAIReview` 的 IntelliJ IDEA 插件 MVP。在用户提交代码前，插件对当前 Git staged diff 调用 OpenAI Compatible API 进行 AI Code Review，并在 IntelliJ ToolWindow 中展示结构化 Review 结果。
+构建一个名为 `DiffGuard` 的 IntelliJ IDEA 插件 MVP。在用户提交代码前，插件对当前 Git staged diff 调用 OpenAI Compatible API 进行 AI Code Review，并在 IntelliJ ToolWindow 中展示结构化 Review 结果。
 
 ## 范围
 
@@ -18,7 +18,7 @@
 - 在 Commit/VCS 工作流中提供 `AI Review` 入口 Action。
 - 使用 IntelliJ API 获取 staged unified diff，不通过 shell 执行 `git` 命令。
 - 调用 OpenAI Compatible Chat Completions API。
-- 新增 `AI Review` ToolWindow，展示风险等级、文件名、行号和 Review 信息。
+- 新增 `DiffGuard` ToolWindow，展示风险等级、文件名、行号和 Review 信息。
 - 提供 IDE 全局配置：`baseUrl`、`apiKey`、`model`。
 
 ### 不实现范围
@@ -47,8 +47,8 @@
 
 主流程：
 
-1. 用户在 Commit/VCS 工作流中点击 `AI Review`。
-2. `AIReviewAction` 打开 `AI Review` ToolWindow，并将状态设置为 `Reviewing...`。
+1. 用户在 Commit/VCS 工作流中点击 `Review with DiffGuard`。
+2. `AIReviewAction` 打开 `DiffGuard` ToolWindow，并将状态设置为 `Reviewing...`。
 3. `GitStagedDiffProvider` 使用 IntelliJ Git API 获取当前 staged unified diff。
 4. 如果没有 staged diff，ToolWindow 显示 `No staged changes to review.`，不调用 AI。
 5. `ReviewPromptBuilder` 根据 diff 构造结构化 Review Prompt。
@@ -62,7 +62,7 @@
 
 职责：
 
-- 响应用户点击 `AI Review`。
+- 响应用户点击 `Review with DiffGuard`。
 - 只做轻量编排，将 Git、AI、解析、UI 逻辑委托给对应组件。
 - 在 EDT 之外执行网络请求与 Review 流程。
 - 在 EDT 中更新 ToolWindow UI。
@@ -177,7 +177,7 @@ UI 设计：
 
 Settings 页面：
 
-`Settings / Tools / CommitDiffAIReview`
+`Settings / Tools / DiffGuard`
 
 字段：
 

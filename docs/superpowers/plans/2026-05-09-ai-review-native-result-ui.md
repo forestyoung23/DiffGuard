@@ -24,21 +24,21 @@
 
 ## 文件结构
 
-- Create: `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultPanelRenderer.kt`
+- Create: `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`
   - 负责把 status 和 findings 渲染为原生 Swing 组件。
   - 内部包含 summary card、badge、finding card、排序和统计逻辑。
-- Create: `src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultPanelRendererTest.kt`
+- Create: `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`
   - 验证 renderer 的可见文本、空结果、统计、排序、普通文本安全边界。
-- Modify: `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewToolWindowFactory.kt`
+- Modify: `src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
   - 移除 `JEditorPane` 和 `AIReviewResultHtmlRenderer` 主展示依赖。
   - 使用 `AIReviewResultPanelRenderer` + `JBScrollPane` + 内容容器替换展示内容。
-- Modify: `src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewToolWindowViewTest.kt`
+- Modify: `src/test/kotlin/com/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`
   - 更新为原生组件结构测试。
   - 验证没有 `JBTable`，也没有 `JEditorPane` 作为主展示组件。
   - 验证每次 `showStatus` / `showFindings` 会替换旧内容。
-- Delete: `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRenderer.kt`
+- Delete: `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt`
   - 原 HTML renderer 不再被 ToolWindow 使用，删除避免保留废弃展示路径。
-- Delete: `src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRendererTest.kt`
+- Delete: `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt`
   - 对应旧 HTML renderer 的测试随旧实现删除。
 
 ---
@@ -46,17 +46,17 @@
 ### Task 1: 新增原生 renderer 行为测试和实现
 
 **Files:**
-- Create: `src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultPanelRendererTest.kt`
-- Create: `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultPanelRenderer.kt`
+- Create: `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`
+- Create: `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`
 
 - [ ] **Step 1: 写失败测试**
 
-创建 `src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultPanelRendererTest.kt`：
+创建 `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`：
 
 ```kotlin
-package com.commitdiffaireview.toolwindow
+package dev.diffguard.toolwindow
 
-import com.commitdiffaireview.model.ReviewFinding
+import dev.diffguard.model.ReviewFinding
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -185,19 +185,19 @@ class AIReviewResultPanelRendererTest {
 Run:
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" test --tests "com.commitdiffaireview.toolwindow.AIReviewResultPanelRendererTest"
+JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewResultPanelRendererTest"
 ```
 
 Expected: FAIL，原因是 `Unresolved reference 'AIReviewResultPanelRenderer'`。
 
 - [ ] **Step 3: 写最小原生 renderer 实现**
 
-创建 `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultPanelRenderer.kt`：
+创建 `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`：
 
 ```kotlin
-package com.commitdiffaireview.toolwindow
+package dev.diffguard.toolwindow
 
-import com.commitdiffaireview.model.ReviewFinding
+import dev.diffguard.model.ReviewFinding
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
@@ -405,7 +405,7 @@ internal class AIReviewResultPanelRenderer {
 Run:
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" test --tests "com.commitdiffaireview.toolwindow.AIReviewResultPanelRendererTest"
+JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewResultPanelRendererTest"
 ```
 
 Expected: PASS，`AIReviewResultPanelRendererTest` 全部通过。
@@ -415,17 +415,17 @@ Expected: PASS，`AIReviewResultPanelRendererTest` 全部通过。
 ### Task 2: 改造 ToolWindow View 为原生结果容器
 
 **Files:**
-- Modify: `src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewToolWindowViewTest.kt`
-- Modify: `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewToolWindowFactory.kt`
+- Modify: `src/test/kotlin/com/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`
+- Modify: `src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
 
 - [ ] **Step 1: 写失败测试替换旧 View 断言**
 
-用以下内容替换 `src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewToolWindowViewTest.kt`：
+用以下内容替换 `src/test/kotlin/com/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`：
 
 ```kotlin
-package com.commitdiffaireview.toolwindow
+package dev.diffguard.toolwindow
 
-import com.commitdiffaireview.model.ReviewFinding
+import dev.diffguard.model.ReviewFinding
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -458,11 +458,11 @@ class AIReviewToolWindowViewTest {
             )
         )
 
-        view.showStatus("正在请求 AI Review")
+        view.showStatus("正在请求 DiffGuard")
 
         val visibleText = visibleTextIn(view.component)
         assertTrue(visibleText.contains("AI Review"), visibleText)
-        assertTrue(visibleText.contains("正在请求 AI Review"), visibleText)
+        assertTrue(visibleText.contains("正在请求 DiffGuard"), visibleText)
         assertFalse(visibleText.contains("Old.kt:1"), visibleText)
         assertFalse(visibleText.contains("旧问题"), visibleText)
     }
@@ -470,7 +470,7 @@ class AIReviewToolWindowViewTest {
     @Test
     fun `showFindings replaces previous status with review report`() {
         val view = AIReviewToolWindowView()
-        view.showStatus("正在请求 AI Review")
+        view.showStatus("正在请求 DiffGuard")
 
         view.showFindings(
             listOf(
@@ -489,7 +489,7 @@ class AIReviewToolWindowViewTest {
         assertTrue(visibleText.contains("HIGH 1"), visibleText)
         assertTrue(visibleText.contains("UserService.kt:42"), visibleText)
         assertTrue(visibleText.contains("可能空指针"), visibleText)
-        assertFalse(visibleText.contains("正在请求 AI Review"), visibleText)
+        assertFalse(visibleText.contains("正在请求 DiffGuard"), visibleText)
     }
 
     @Test
@@ -534,19 +534,19 @@ class AIReviewToolWindowViewTest {
 Run:
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" test --tests "com.commitdiffaireview.toolwindow.AIReviewToolWindowViewTest"
+JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewToolWindowViewTest"
 ```
 
 Expected: FAIL，当前实现仍包含 `JEditorPane`，且 `showStatus` / `showFindings` 通过 HTML 文档展示。
 
 - [ ] **Step 3: 改造 ToolWindow View 实现**
 
-用以下内容替换 `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewToolWindowFactory.kt`：
+用以下内容替换 `src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`：
 
 ```kotlin
-package com.commitdiffaireview.toolwindow
+package dev.diffguard.toolwindow
 
-import com.commitdiffaireview.model.ReviewFinding
+import dev.diffguard.model.ReviewFinding
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -627,7 +627,7 @@ class AIReviewToolWindowService {
 Run:
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" test --tests "com.commitdiffaireview.toolwindow.AIReviewToolWindowViewTest"
+JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewToolWindowViewTest"
 ```
 
 Expected: PASS，`AIReviewToolWindowViewTest` 全部通过。
@@ -637,7 +637,7 @@ Expected: PASS，`AIReviewToolWindowViewTest` 全部通过。
 Run:
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" test --tests "com.commitdiffaireview.toolwindow.AIReviewResultPanelRendererTest" --tests "com.commitdiffaireview.toolwindow.AIReviewToolWindowViewTest"
+JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewResultPanelRendererTest" --tests "dev.diffguard.toolwindow.AIReviewToolWindowViewTest"
 ```
 
 Expected: PASS，两组 ToolWindow UI 测试全部通过。
@@ -647,22 +647,22 @@ Expected: PASS，两组 ToolWindow UI 测试全部通过。
 ### Task 3: 删除旧 HTML renderer 展示路径
 
 **Files:**
-- Delete: `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRenderer.kt`
-- Delete: `src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRendererTest.kt`
+- Delete: `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt`
+- Delete: `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt`
 
 - [ ] **Step 1: 确认旧 renderer 只剩自身和测试引用**
 
 Run:
 
 ```bash
-git -C "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" grep -n "AIReviewResultHtmlRenderer"
+git -C "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" grep -n "AIReviewResultHtmlRenderer"
 ```
 
 Expected: 只看到以下两个文件的引用：
 
 ```text
-src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRenderer.kt
-src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRendererTest.kt
+src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt
+src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt
 ```
 
 - [ ] **Step 2: 删除旧 HTML renderer 和测试**
@@ -670,7 +670,7 @@ src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRendererTest
 Run:
 
 ```bash
-rm "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui/src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRenderer.kt" "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui/src/test/kotlin/com/commitdiffaireview/toolwindow/AIReviewResultHtmlRendererTest.kt"
+rm "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui/src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt" "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui/src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt"
 ```
 
 Expected: 两个旧 HTML renderer 文件被删除。
@@ -680,7 +680,7 @@ Expected: 两个旧 HTML renderer 文件被删除。
 Run:
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" test --tests "com.commitdiffaireview.toolwindow.*"
+JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.*"
 ```
 
 Expected: PASS，`toolwindow` 包测试全部通过。
@@ -697,7 +697,7 @@ Expected: PASS，`toolwindow` 包测试全部通过。
 Run:
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" test
+JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test
 ```
 
 Expected: PASS。若出现既有 IntelliJ bundled plugin descriptor 警告但测试 exit code 为 0，可记录为非阻塞环境警告，不在本任务修复。
@@ -707,7 +707,7 @@ Expected: PASS。若出现既有 IntelliJ bundled plugin descriptor 警告但测
 Run:
 
 ```bash
-JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" buildPlugin
+JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" buildPlugin
 ```
 
 Expected: PASS，插件包构建成功。
@@ -717,7 +717,7 @@ Expected: PASS，插件包构建成功。
 Run:
 
 ```bash
-git -C "/Users/forest/Work/Ai/CommitDiffAIReview/.worktrees/ai-review-markdown-result-ui" grep -n "JEditorPane\|AIReviewResultHtmlRenderer" -- src/main src/test
+git -C "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" grep -n "JEditorPane\|AIReviewResultHtmlRenderer" -- src/main src/test
 ```
 
 Expected: 没有 `AIReviewResultHtmlRenderer` 引用；`JEditorPane` 只允许出现在测试断言“组件树中不存在 JEditorPane”的 import / type check 中，不允许出现在生产代码中。

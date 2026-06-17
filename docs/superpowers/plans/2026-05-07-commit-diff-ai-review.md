@@ -1,4 +1,4 @@
-# CommitDiffAIReview MVP Implementation Plan
+# DiffGuard MVP Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -15,7 +15,7 @@
 创建以下项目文件：
 
 ```text
-CommitDiffAIReview/
+DiffGuard/
 ├── build.gradle.kts
 ├── gradle.properties
 ├── settings.gradle.kts
@@ -24,7 +24,7 @@ CommitDiffAIReview/
 ├── docs/superpowers/plans/2026-05-07-commit-diff-ai-review.md
 └── src/
     ├── main/
-    │   ├── kotlin/com/commitdiffaireview/
+    │   ├── kotlin/com/diffguard/
     │   │   ├── action/AIReviewAction.kt
     │   │   ├── ai/AIProvider.kt
     │   │   ├── ai/OpenAIProvider.kt
@@ -40,7 +40,7 @@ CommitDiffAIReview/
     │   │   ├── settings/AIReviewSettingsService.kt
     │   │   └── toolwindow/AIReviewToolWindowFactory.kt
     │   └── resources/META-INF/plugin.xml
-    └── test/kotlin/com/commitdiffaireview/review/
+    └── test/kotlin/com/diffguard/review/
         ├── ReviewPromptBuilderTest.kt
         └── ReviewResultParserTest.kt
 ```
@@ -88,7 +88,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CommitDiffAIReview"
+rootProject.name = "DiffGuard"
 ```
 
 - [ ] **Step 2: 创建 `gradle.properties`**
@@ -96,8 +96,8 @@ rootProject.name = "CommitDiffAIReview"
 ```properties
 kotlin.code.style=official
 org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
-pluginGroup=com.commitdiffaireview
-pluginName=CommitDiffAIReview
+pluginGroup=dev.diffguard
+pluginName=DiffGuard
 pluginVersion=0.1.0
 pluginSinceBuild=241
 pluginUntilBuild=253.*
@@ -196,14 +196,14 @@ git commit -m "chore: initialize IntelliJ plugin project"
 ### Task 2: 添加核心模型与解析测试
 
 **Files:**
-- Create: `src/main/kotlin/com/commitdiffaireview/model/ReviewFinding.kt`
-- Create: `src/main/kotlin/com/commitdiffaireview/review/ReviewResultParser.kt`
-- Create: `src/test/kotlin/com/commitdiffaireview/review/ReviewResultParserTest.kt`
+- Create: `src/main/kotlin/com/diffguard/model/ReviewFinding.kt`
+- Create: `src/main/kotlin/com/diffguard/review/ReviewResultParser.kt`
+- Create: `src/test/kotlin/com/diffguard/review/ReviewResultParserTest.kt`
 
 - [ ] **Step 1: 先写失败测试 `ReviewResultParserTest.kt`**
 
 ```kotlin
-package com.commitdiffaireview.review
+package dev.diffguard.review
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -272,14 +272,14 @@ class ReviewResultParserTest {
 
 - [ ] **Step 2: 运行测试确认失败**
 
-Run: `./gradlew test --tests "com.commitdiffaireview.review.ReviewResultParserTest"`
+Run: `./gradlew test --tests "dev.diffguard.review.ReviewResultParserTest"`
 
 Expected: FAIL，原因是 `ReviewResultParser` 和 `ReviewFinding` 尚不存在。
 
 - [ ] **Step 3: 创建 `ReviewFinding.kt`**
 
 ```kotlin
-package com.commitdiffaireview.model
+package dev.diffguard.model
 
 import kotlinx.serialization.Serializable
 
@@ -295,9 +295,9 @@ data class ReviewFinding(
 - [ ] **Step 4: 创建 `ReviewResultParser.kt`**
 
 ```kotlin
-package com.commitdiffaireview.review
+package dev.diffguard.review
 
-import com.commitdiffaireview.model.ReviewFinding
+import dev.diffguard.model.ReviewFinding
 import kotlinx.serialization.json.Json
 
 class ReviewResultParser {
@@ -346,14 +346,14 @@ class ReviewResultParser {
 
 - [ ] **Step 5: 运行测试确认通过**
 
-Run: `./gradlew test --tests "com.commitdiffaireview.review.ReviewResultParserTest"`
+Run: `./gradlew test --tests "dev.diffguard.review.ReviewResultParserTest"`
 
 Expected: PASS。
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/main/kotlin/com/commitdiffaireview/model/ReviewFinding.kt src/main/kotlin/com/commitdiffaireview/review/ReviewResultParser.kt src/test/kotlin/com/commitdiffaireview/review/ReviewResultParserTest.kt
+git add src/main/kotlin/com/diffguard/model/ReviewFinding.kt src/main/kotlin/com/diffguard/review/ReviewResultParser.kt src/test/kotlin/com/diffguard/review/ReviewResultParserTest.kt
 git commit -m "test: add review result parser"
 ```
 
@@ -364,13 +364,13 @@ git commit -m "test: add review result parser"
 ### Task 3: 添加 Prompt Builder 与测试
 
 **Files:**
-- Create: `src/main/kotlin/com/commitdiffaireview/review/ReviewPromptBuilder.kt`
-- Create: `src/test/kotlin/com/commitdiffaireview/review/ReviewPromptBuilderTest.kt`
+- Create: `src/main/kotlin/com/diffguard/review/ReviewPromptBuilder.kt`
+- Create: `src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt`
 
 - [ ] **Step 1: 先写失败测试 `ReviewPromptBuilderTest.kt`**
 
 ```kotlin
-package com.commitdiffaireview.review
+package dev.diffguard.review
 
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -398,14 +398,14 @@ class ReviewPromptBuilderTest {
 
 - [ ] **Step 2: 运行测试确认失败**
 
-Run: `./gradlew test --tests "com.commitdiffaireview.review.ReviewPromptBuilderTest"`
+Run: `./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
 
 Expected: FAIL，原因是 `ReviewPromptBuilder` 尚不存在。
 
 - [ ] **Step 3: 创建 `ReviewPromptBuilder.kt`**
 
 ```kotlin
-package com.commitdiffaireview.review
+package dev.diffguard.review
 
 class ReviewPromptBuilder {
     fun build(stagedDiff: String): String = """
@@ -446,14 +446,14 @@ class ReviewPromptBuilder {
 
 - [ ] **Step 4: 运行测试确认通过**
 
-Run: `./gradlew test --tests "com.commitdiffaireview.review.ReviewPromptBuilderTest"`
+Run: `./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
 
 Expected: PASS。
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/main/kotlin/com/commitdiffaireview/review/ReviewPromptBuilder.kt src/test/kotlin/com/commitdiffaireview/review/ReviewPromptBuilderTest.kt
+git add src/main/kotlin/com/diffguard/review/ReviewPromptBuilder.kt src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt
 git commit -m "test: add review prompt builder"
 ```
 
@@ -464,14 +464,14 @@ git commit -m "test: add review prompt builder"
 ### Task 4: 添加 OpenAI DTO、Provider 接口与 OpenAIProvider
 
 **Files:**
-- Create: `src/main/kotlin/com/commitdiffaireview/ai/AIProvider.kt`
-- Create: `src/main/kotlin/com/commitdiffaireview/model/OpenAIModels.kt`
-- Create: `src/main/kotlin/com/commitdiffaireview/ai/OpenAIProvider.kt`
+- Create: `src/main/kotlin/com/diffguard/ai/AIProvider.kt`
+- Create: `src/main/kotlin/com/diffguard/model/OpenAIModels.kt`
+- Create: `src/main/kotlin/com/diffguard/ai/OpenAIProvider.kt`
 
 - [ ] **Step 1: 创建 `AIProvider.kt`**
 
 ```kotlin
-package com.commitdiffaireview.ai
+package dev.diffguard.ai
 
 interface AIProvider {
     suspend fun review(prompt: String): String
@@ -481,7 +481,7 @@ interface AIProvider {
 - [ ] **Step 2: 创建 `OpenAIModels.kt`**
 
 ```kotlin
-package com.commitdiffaireview.model
+package dev.diffguard.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -526,11 +526,11 @@ data class OpenAIErrorDetail(
 - [ ] **Step 3: 创建 `OpenAIProvider.kt`**
 
 ```kotlin
-package com.commitdiffaireview.ai
+package dev.diffguard.ai
 
-import com.commitdiffaireview.model.OpenAIChatRequest
-import com.commitdiffaireview.model.OpenAIChatResponse
-import com.commitdiffaireview.model.OpenAIMessage
+import dev.diffguard.model.OpenAIChatRequest
+import dev.diffguard.model.OpenAIChatResponse
+import dev.diffguard.model.OpenAIMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -553,7 +553,7 @@ class OpenAIProvider(
 
     override suspend fun review(prompt: String): String = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) {
-            error("API Key is not configured. Please configure it in Settings / Tools / CommitDiffAIReview.")
+            error("API Key is not configured. Please configure it in Settings / Tools / DiffGuard.")
         }
 
         val endpoint = baseUrl.trimEnd('/') + "/v1/chat/completions"
@@ -598,7 +598,7 @@ Expected: PASS。
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/main/kotlin/com/commitdiffaireview/ai/AIProvider.kt src/main/kotlin/com/commitdiffaireview/model/OpenAIModels.kt src/main/kotlin/com/commitdiffaireview/ai/OpenAIProvider.kt
+git add src/main/kotlin/com/diffguard/ai/AIProvider.kt src/main/kotlin/com/diffguard/model/OpenAIModels.kt src/main/kotlin/com/diffguard/ai/OpenAIProvider.kt
 git commit -m "feat: add OpenAI compatible provider"
 ```
 
@@ -609,15 +609,15 @@ git commit -m "feat: add OpenAI compatible provider"
 ### Task 5: 添加全局 Settings 配置
 
 **Files:**
-- Create: `src/main/kotlin/com/commitdiffaireview/model/AISettingsState.kt`
-- Create: `src/main/kotlin/com/commitdiffaireview/settings/AIReviewSettingsService.kt`
-- Create: `src/main/kotlin/com/commitdiffaireview/settings/AIReviewSettingsComponent.kt`
-- Create: `src/main/kotlin/com/commitdiffaireview/settings/AIReviewConfigurable.kt`
+- Create: `src/main/kotlin/com/diffguard/model/AISettingsState.kt`
+- Create: `src/main/kotlin/com/diffguard/settings/AIReviewSettingsService.kt`
+- Create: `src/main/kotlin/com/diffguard/settings/AIReviewSettingsComponent.kt`
+- Create: `src/main/kotlin/com/diffguard/settings/AIReviewConfigurable.kt`
 
 - [ ] **Step 1: 创建 `AISettingsState.kt`**
 
 ```kotlin
-package com.commitdiffaireview.model
+package dev.diffguard.model
 
 data class AISettingsState(
     var baseUrl: String = "https://api.openai.com",
@@ -629,9 +629,9 @@ data class AISettingsState(
 - [ ] **Step 2: 创建 `AIReviewSettingsService.kt`**
 
 ```kotlin
-package com.commitdiffaireview.settings
+package dev.diffguard.settings
 
-import com.commitdiffaireview.model.AISettingsState
+import dev.diffguard.model.AISettingsState
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -640,8 +640,8 @@ import com.intellij.openapi.components.Storage
 
 @Service(Service.Level.APP)
 @State(
-    name = "CommitDiffAIReviewSettings",
-    storages = [Storage("CommitDiffAIReviewSettings.xml")]
+    name = "DiffGuardSettings",
+    storages = [Storage("DiffGuardSettings.xml")]
 )
 class AIReviewSettingsService : PersistentStateComponent<AISettingsState> {
     private var state = AISettingsState()
@@ -662,7 +662,7 @@ class AIReviewSettingsService : PersistentStateComponent<AISettingsState> {
 - [ ] **Step 3: 创建 `AIReviewSettingsComponent.kt`**
 
 ```kotlin
-package com.commitdiffaireview.settings
+package dev.diffguard.settings
 
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.bindText
@@ -703,7 +703,7 @@ class AIReviewSettingsComponent {
 - [ ] **Step 4: 创建 `AIReviewConfigurable.kt`**
 
 ```kotlin
-package com.commitdiffaireview.settings
+package dev.diffguard.settings
 
 import com.intellij.openapi.options.Configurable
 import javax.swing.JComponent
@@ -711,7 +711,7 @@ import javax.swing.JComponent
 class AIReviewConfigurable : Configurable {
     private var component: AIReviewSettingsComponent? = null
 
-    override fun getDisplayName(): String = "CommitDiffAIReview"
+    override fun getDisplayName(): String = "DiffGuard"
 
     override fun createComponent(): JComponent {
         val created = AIReviewSettingsComponent()
@@ -744,7 +744,7 @@ Expected: PASS。
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/main/kotlin/com/commitdiffaireview/model/AISettingsState.kt src/main/kotlin/com/commitdiffaireview/settings/AIReviewSettingsService.kt src/main/kotlin/com/commitdiffaireview/settings/AIReviewSettingsComponent.kt src/main/kotlin/com/commitdiffaireview/settings/AIReviewConfigurable.kt
+git add src/main/kotlin/com/diffguard/model/AISettingsState.kt src/main/kotlin/com/diffguard/settings/AIReviewSettingsService.kt src/main/kotlin/com/diffguard/settings/AIReviewSettingsComponent.kt src/main/kotlin/com/diffguard/settings/AIReviewConfigurable.kt
 git commit -m "feat: add global AI review settings"
 ```
 
@@ -755,14 +755,14 @@ git commit -m "feat: add global AI review settings"
 ### Task 6: 添加 ToolWindow UI
 
 **Files:**
-- Create: `src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewToolWindowFactory.kt`
+- Create: `src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
 
 - [ ] **Step 1: 创建 `AIReviewToolWindowFactory.kt`**
 
 ```kotlin
-package com.commitdiffaireview.toolwindow
+package dev.diffguard.toolwindow
 
-import com.commitdiffaireview.model.ReviewFinding
+import dev.diffguard.model.ReviewFinding
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -860,7 +860,7 @@ Expected: PASS。
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/main/kotlin/com/commitdiffaireview/toolwindow/AIReviewToolWindowFactory.kt
+git add src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt
 git commit -m "feat: add AI review tool window"
 ```
 
@@ -871,12 +871,12 @@ git commit -m "feat: add AI review tool window"
 ### Task 7: 添加 staged diff 获取实现
 
 **Files:**
-- Create: `src/main/kotlin/com/commitdiffaireview/git/GitStagedDiffProvider.kt`
+- Create: `src/main/kotlin/com/diffguard/git/GitStagedDiffProvider.kt`
 
 - [ ] **Step 1: 创建 `GitStagedDiffProvider.kt`**
 
 ```kotlin
-package com.commitdiffaireview.git
+package dev.diffguard.git
 
 import com.intellij.openapi.project.Project
 import git4idea.commands.Git
@@ -917,7 +917,7 @@ Expected: PASS。若 Git4Idea API 在当前 platform 版本中方法名有差异
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/main/kotlin/com/commitdiffaireview/git/GitStagedDiffProvider.kt
+git add src/main/kotlin/com/diffguard/git/GitStagedDiffProvider.kt
 git commit -m "feat: add staged diff provider"
 ```
 
@@ -928,17 +928,17 @@ git commit -m "feat: add staged diff provider"
 ### Task 8: 添加 Review 编排服务
 
 **Files:**
-- Create: `src/main/kotlin/com/commitdiffaireview/review/ReviewOrchestrator.kt`
+- Create: `src/main/kotlin/com/diffguard/review/ReviewOrchestrator.kt`
 
 - [ ] **Step 1: 创建 `ReviewOrchestrator.kt`**
 
 ```kotlin
-package com.commitdiffaireview.review
+package dev.diffguard.review
 
-import com.commitdiffaireview.ai.OpenAIProvider
-import com.commitdiffaireview.git.GitStagedDiffProvider
-import com.commitdiffaireview.model.ReviewFinding
-import com.commitdiffaireview.settings.AIReviewSettingsService
+import dev.diffguard.ai.OpenAIProvider
+import dev.diffguard.git.GitStagedDiffProvider
+import dev.diffguard.model.ReviewFinding
+import dev.diffguard.settings.AIReviewSettingsService
 import com.intellij.openapi.project.Project
 
 class ReviewOrchestrator(
@@ -954,7 +954,7 @@ class ReviewOrchestrator(
 
         val settings = AIReviewSettingsService.getInstance().state
         if (settings.apiKey.isBlank()) {
-            return ReviewResult.Error("API Key is not configured. Please configure it in Settings / Tools / CommitDiffAIReview.")
+            return ReviewResult.Error("API Key is not configured. Please configure it in Settings / Tools / DiffGuard.")
         }
 
         val provider = OpenAIProvider(
@@ -984,7 +984,7 @@ Expected: PASS。
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/main/kotlin/com/commitdiffaireview/review/ReviewOrchestrator.kt
+git add src/main/kotlin/com/diffguard/review/ReviewOrchestrator.kt
 git commit -m "feat: add review orchestration"
 ```
 
@@ -995,16 +995,16 @@ git commit -m "feat: add review orchestration"
 ### Task 9: 添加 Action 入口
 
 **Files:**
-- Create: `src/main/kotlin/com/commitdiffaireview/action/AIReviewAction.kt`
+- Create: `src/main/kotlin/com/diffguard/action/AIReviewAction.kt`
 
 - [ ] **Step 1: 创建 `AIReviewAction.kt`**
 
 ```kotlin
-package com.commitdiffaireview.action
+package dev.diffguard.action
 
-import com.commitdiffaireview.review.ReviewOrchestrator
-import com.commitdiffaireview.review.ReviewResult
-import com.commitdiffaireview.toolwindow.AIReviewToolWindowService
+import dev.diffguard.review.ReviewOrchestrator
+import dev.diffguard.review.ReviewResult
+import dev.diffguard.toolwindow.AIReviewToolWindowService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -1061,7 +1061,7 @@ Expected: PASS。
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/main/kotlin/com/commitdiffaireview/action/AIReviewAction.kt
+git add src/main/kotlin/com/diffguard/action/AIReviewAction.kt
 git commit -m "feat: add AI review action"
 ```
 
@@ -1078,9 +1078,9 @@ git commit -m "feat: add AI review action"
 
 ```xml
 <idea-plugin>
-    <id>com.commitdiffaireview</id>
-    <name>CommitDiffAIReview</name>
-    <vendor email="support@example.com">CommitDiffAIReview</vendor>
+    <id>dev.diffguard</id>
+    <name>DiffGuard</name>
+    <vendor email="support@example.com">DiffGuard</vendor>
 
     <description><![CDATA[
         在 Git Commit 前对 staged diff 执行 AI Code Review，并在 ToolWindow 中展示结构化结果。
@@ -1093,18 +1093,18 @@ git commit -m "feat: add AI review action"
         <toolWindow
             id="AI Review"
             anchor="bottom"
-            factoryClass="com.commitdiffaireview.toolwindow.AIReviewToolWindowFactory" />
+            factoryClass="dev.diffguard.toolwindow.AIReviewToolWindowFactory" />
 
         <applicationConfigurable
             parentId="tools"
-            instance="com.commitdiffaireview.settings.AIReviewConfigurable"
-            displayName="CommitDiffAIReview" />
+            instance="dev.diffguard.settings.AIReviewConfigurable"
+            displayName="DiffGuard" />
     </extensions>
 
     <actions>
         <action
-            id="CommitDiffAIReview.AIReviewAction"
-            class="com.commitdiffaireview.action.AIReviewAction"
+            id="DiffGuard.AIReviewAction"
+            class="dev.diffguard.action.AIReviewAction"
             text="AI Review"
             description="Review staged diff with AI before commit">
             <add-to-group group-id="Vcs.Group.Commit" anchor="last" />
@@ -1142,16 +1142,16 @@ git commit -m "feat: register plugin extensions and action"
 - [ ] **Step 1: 创建 `README.md`**
 
 ```markdown
-# CommitDiffAIReview
+# DiffGuard
 
-CommitDiffAIReview 是一个 IntelliJ IDEA 插件 MVP，用于在 Git Commit 前对当前 staged diff 执行 AI Code Review。
+DiffGuard 是一个 IntelliJ IDEA 插件 MVP，用于在 Git Commit 前对当前 staged diff 执行 AI Code Review。
 
 ## 功能
 
 - 在 Commit/VCS 工作流中提供 `AI Review` 入口。
 - 获取当前 Git staged unified diff。
 - 调用 OpenAI Compatible API。
-- 在 `AI Review` ToolWindow 中展示结构化 Review 结果。
+- 在 `DiffGuard` ToolWindow 中展示结构化 Review 结果。
 - 支持全局配置 `baseUrl`、`apiKey`、`model`。
 
 ## 技术栈
@@ -1198,7 +1198,7 @@ build/distributions/
 打开 IntelliJ IDEA：
 
 ```text
-Settings / Tools / CommitDiffAIReview
+Settings / Tools / DiffGuard
 ```
 
 配置以下字段：
@@ -1211,8 +1211,8 @@ Settings / Tools / CommitDiffAIReview
 
 1. 在 Git 项目中修改代码。
 2. 将要提交的文件加入 staged/index。
-3. 在 Commit/VCS 工作流中点击 `AI Review`。
-4. 查看底部 `AI Review` ToolWindow 中的 Review 结果。
+3. 在 Commit/VCS 工作流中点击 `Review with DiffGuard`。
+4. 查看底部 `DiffGuard` ToolWindow 中的 Review 结果。
 
 ## Review 返回格式
 
@@ -1278,7 +1278,7 @@ Expected: PASS。
 
 Run: `./gradlew buildPlugin`
 
-Expected: PASS，生成 `build/distributions/CommitDiffAIReview-0.1.0.zip` 或同版本 zip。
+Expected: PASS，生成 `build/distributions/DiffGuard-0.1.0.zip` 或同版本 zip。
 
 - [ ] **Step 3: 启动 IDE 沙箱**
 
@@ -1291,7 +1291,7 @@ Expected: IntelliJ IDEA 沙箱启动，插件已加载。
 在沙箱 IDE 中打开：
 
 ```text
-Settings / Tools / CommitDiffAIReview
+Settings / Tools / DiffGuard
 ```
 
 Expected:
@@ -1301,11 +1301,11 @@ Expected:
 
 - [ ] **Step 5: 手动检查 ToolWindow**
 
-在沙箱 IDE 中打开任意 Git 项目并 staged 一个文件后，点击 `AI Review`。
+在沙箱 IDE 中打开任意 Git 项目并 staged 一个文件后，点击 `Review with DiffGuard`。
 
 Expected:
 
-- 底部出现 `AI Review` ToolWindow。
+- 底部出现 `DiffGuard` ToolWindow。
 - 无 staged changes 时显示 `No staged changes to review.`。
 - 未配置 API Key 时显示配置提示。
 - 配置 API 后能展示 findings 或 `No issues found.`。
@@ -1314,7 +1314,7 @@ Expected:
 
 ```bash
 git add build.gradle.kts gradle.properties settings.gradle.kts README.md src docs
-git commit -m "feat: implement CommitDiffAIReview MVP"
+git commit -m "feat: implement DiffGuard MVP"
 ```
 
 如果当前目录仍不是 git 仓库，跳过 commit。

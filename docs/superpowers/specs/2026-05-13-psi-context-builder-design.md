@@ -52,7 +52,7 @@ OpenAIProvider → AI Review
 ### 包结构
 
 ```
-src/main/kotlin/com/commitdiffaireview/
+src/main/kotlin/com/diffguard/
 ├── psi/
 │   ├── JavaPsiAnalyzer.kt
 │   └── MethodCallExtractor.kt
