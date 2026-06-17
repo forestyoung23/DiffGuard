@@ -18,11 +18,18 @@ data class OpenAIMessage(
 
 @Serializable
 data class OpenAIChatResponse(
-    val choices: List<OpenAIChoice> = emptyList()
+    val choices: List<OpenAIChoice> = emptyList(),
+    val error: OpenAIError? = null
 )
 
 @Serializable
 data class OpenAIChoice(
     val message: OpenAIMessage? = null,
     @SerialName("finish_reason") val finishReason: String? = null
+)
+
+@Serializable
+data class OpenAIError(
+    val message: String? = null,
+    val type: String? = null
 )

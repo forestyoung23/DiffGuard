@@ -1,5 +1,6 @@
 package dev.diffguard.action
 
+import dev.diffguard.ai.ReviewCancellationToken
 import dev.diffguard.review.ReviewOrchestrator
 import dev.diffguard.review.ReviewOutcome
 import dev.diffguard.toolwindow.AIReviewToolWindowService
@@ -48,17 +49,21 @@ class AIReviewAction : AnAction("Review with DiffGuard") {
     private inner class ReviewTask(
         private val taskProject: Project,
         private val toolWindowService: AIReviewToolWindowService
-    ) : Task.Backgroundable(taskProject, "DiffGuard staged changes", false) {
+    ) : Task.Backgroundable(taskProject, "DiffGuard staged changes", true) {
         private var outcome: ReviewOutcome? = null
+        private lateinit var cancellationToken: ReviewCancellationToken
 
         override fun run(indicator: ProgressIndicator) {
             indicator.isIndeterminate = true
+            cancellationToken = ReviewCancellationToken { indicator.isCanceled }
             outcome = ReviewOrchestrator(
                 project = taskProject,
                 onStatus = { status ->
+                    cancellationToken.throwIfCancellationRequested()
                     indicator.text = status
                     showReviewingStatus(taskProject, toolWindowService, status)
-                }
+                },
+                cancellationToken = cancellationToken
             ).reviewStagedDiff()
         }
 
@@ -71,6 +76,9 @@ class AIReviewAction : AnAction("Review with DiffGuard") {
         }
 
         override fun onCancel() {
+            if (::cancellationToken.isInitialized) {
+                cancellationToken.cancel()
+            }
             toolWindowService.showState(
                 ReviewUiState.Failed(
                     title = "DiffGuard 已取消",

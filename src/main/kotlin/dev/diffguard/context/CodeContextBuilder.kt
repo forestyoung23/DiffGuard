@@ -21,12 +21,13 @@ object DiffParser {
     /**
      * 解析 unified diff，返回 文件路径 → 修改行号集合（仅 + 侧）
      */
-    fun parse(diff: String): Map<String, Set<Int>> {
+    fun parse(diff: String, maxJavaFiles: Int = Int.MAX_VALUE): Map<String, Set<Int>> {
         if (diff.isBlank()) return emptyMap()
 
         val result = mutableMapOf<String, MutableSet<Int>>()
         var currentFile: String? = null
         var newLineNum = 0
+        val effectiveMaxJavaFiles = maxJavaFiles.coerceAtLeast(0)
 
         for (line in diff.lines()) {
             when {
@@ -36,11 +37,17 @@ object DiffParser {
                     if (currentFile != null && !currentFile.endsWith(".java")) {
                         currentFile = null
                     }
+                    if (currentFile != null && currentFile !in result && result.size >= effectiveMaxJavaFiles) {
+                        currentFile = null
+                    }
                 }
                 // 优先以新文件路径为准，兼容 rename、new file、路径中包含空格等场景
                 line.startsWith("+++ ") -> {
                     currentFile = extractNewFilePath(line)
                     if (currentFile != null && !currentFile.endsWith(".java")) {
+                        currentFile = null
+                    }
+                    if (currentFile != null && currentFile !in result && result.size >= effectiveMaxJavaFiles) {
                         currentFile = null
                     }
                 }
@@ -135,7 +142,10 @@ object DiffParser {
  * Code Context 构建器
  * 集成 PSI 分析组件，从 unified diff 构建完整的代码上下文
  */
-class CodeContextBuilder(private val project: Project) {
+class CodeContextBuilder(
+    private val project: Project,
+    private val maxJavaFiles: Int = DEFAULT_MAX_JAVA_FILES
+) {
 
     private val javaPsiAnalyzer = JavaPsiAnalyzer()
     private val methodCallExtractor = MethodCallExtractor()
@@ -145,11 +155,11 @@ class CodeContextBuilder(private val project: Project) {
      * 从 unified diff 构建 CodeContext 列表
      */
     fun buildFromDiff(diff: String): List<CodeContext> {
-        val fileLineMap = DiffParser.parse(diff)
+        val fileLineMap = DiffParser.parse(diff, maxJavaFiles = maxJavaFiles)
         if (fileLineMap.isEmpty()) return emptyList()
 
-        return ReadAction.compute<List<CodeContext>, Nothing> {
-            fileLineMap.mapNotNull { (relativePath, modifiedLines) ->
+        return fileLineMap.mapNotNull { (relativePath, modifiedLines) ->
+            ReadAction.compute<CodeContext?, Nothing> {
                 try {
                     analyzeFile(relativePath, modifiedLines)
                 } catch (e: Exception) {
@@ -253,5 +263,9 @@ class CodeContextBuilder(private val project: Project) {
         return roots.firstNotNullOfOrNull { root ->
             LocalFileSystem.getInstance().findFileByPath("$root/$normalizedRelativePath")
         }
+    }
+
+    private companion object {
+        const val DEFAULT_MAX_JAVA_FILES = 30
     }
 }

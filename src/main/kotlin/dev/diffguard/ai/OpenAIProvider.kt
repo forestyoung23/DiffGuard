@@ -3,6 +3,7 @@ package dev.diffguard.ai
 import dev.diffguard.model.AISettingsState
 import dev.diffguard.model.OpenAIChatRequest
 import dev.diffguard.model.OpenAIChatResponse
+import dev.diffguard.model.OpenAIError
 import dev.diffguard.model.OpenAIMessage
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -23,7 +24,11 @@ class OpenAIProvider(
     }
     private val jsonMediaType = JSON_MEDIA_TYPE.toMediaType()
 
-    override fun review(prompt: String): String {
+    override fun review(prompt: String): String =
+        review(prompt, ReviewCancellationToken())
+
+    override fun review(prompt: String, cancellationToken: ReviewCancellationToken): String {
+        cancellationToken.throwIfCancellationRequested()
         val requestBody = OpenAIChatRequest(
             model = model,
             messages = listOf(OpenAIMessage(role = "user", content = prompt))
@@ -36,17 +41,27 @@ class OpenAIProvider(
             .post(json.encodeToString(requestBody).toRequestBody(jsonMediaType))
             .build()
 
-        client.newCall(request).execute().use { response ->
+        val call = client.newCall(request)
+        cancellationToken.invokeOnCancel { call.cancel() }
+        cancellationToken.throwIfCancellationRequested()
+        call.execute().use { response ->
+            cancellationToken.throwIfCancellationRequested()
             val responseBody = response.body?.string().orEmpty()
             if (looksLikeHtml(responseBody)) {
                 error("AI 服务返回了 HTML 页面，请检查 Base URL 是否为 OpenAI Compatible API 地址（通常以 /v1 结尾），不要填写 new-api 管理后台页面地址。")
             }
             if (!response.isSuccessful) {
-                error("DiffGuard 请求失败：HTTP ${response.code} ${responseBodyPreview(responseBody)}")
+                error("DiffGuard 请求失败：HTTP ${response.code} ${errorPreview(responseBody)}")
             }
 
             val chatResponse = json.decodeFromString<OpenAIChatResponse>(responseBody)
-            return chatResponse.choices.firstOrNull()?.message?.content.orEmpty()
+            val choice = chatResponse.choices.firstOrNull()
+                ?: error("AI 服务返回成功响应，但没有 choices 内容。")
+            if (choice.finishReason == "length") {
+                error("AI 返回因长度限制被截断，请缩小 diff 或换用上下文更大的模型。")
+            }
+            return choice.message?.content?.takeIf { it.isNotBlank() }
+                ?: error("AI 服务返回成功响应，但 message content 为空。")
         }
     }
 
@@ -62,6 +77,17 @@ class OpenAIProvider(
         } else {
             responseBody.take(MAX_ERROR_BODY_CHARS) + "...[truncated]"
         }
+
+    private fun errorPreview(responseBody: String): String {
+        val structuredError = runCatching {
+            json.decodeFromString<OpenAIChatResponse>(responseBody).error
+        }.getOrNull()
+        return structuredError?.toMessage()?.takeIf { it.isNotBlank() }
+            ?: responseBodyPreview(responseBody)
+    }
+
+    private fun OpenAIError.toMessage(): String =
+        listOfNotNull(type, message).joinToString(": ")
 
     companion object {
         private const val JSON_MEDIA_TYPE = "application/json"

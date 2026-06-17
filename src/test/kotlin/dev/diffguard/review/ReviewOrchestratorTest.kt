@@ -2,7 +2,10 @@ package dev.diffguard.review
 
 import dev.diffguard.ai.AIProvider
 import dev.diffguard.model.AISettingsState
+import dev.diffguard.workspace.WorkspaceContext
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ReviewOrchestratorTest {
@@ -81,5 +84,83 @@ class ReviewOrchestratorTest {
         val result = orchestrator.reviewStagedDiff()
 
         assertEquals(ReviewOutcome.ParseFallback("not json"), result)
+    }
+
+    @Test
+    fun `includes workspace context in real review prompt`() {
+        var capturedPrompt = ""
+        val provider = object : AIProvider {
+            override fun review(prompt: String): String {
+                capturedPrompt = prompt
+                return "[]"
+            }
+        }
+        val orchestrator = ReviewOrchestrator(
+            diffProvider = { "diff --git a/src/Foo.java b/src/Foo.java\n+++ b/src/Foo.java\n@@ -1 +1 @@\n+class Foo {}" },
+            settingsProvider = { AISettingsState(apiKey = "test-key") },
+            providerFactory = { provider },
+            workspaceProvider = {
+                WorkspaceContext(
+                    rules = "- Redis Key 必须设置 TTL",
+                    architecture = "Hexagonal architecture",
+                    reviewFocus = "- Transaction boundary",
+                    ignorePatterns = emptyList()
+                )
+            }
+        )
+
+        val result = orchestrator.reviewStagedDiff()
+
+        assertEquals(ReviewOutcome.Completed(emptyList()), result)
+        assertTrue(capturedPrompt.contains("# Project Rules\n\n- Redis Key 必须设置 TTL"), capturedPrompt)
+        assertTrue(capturedPrompt.contains("# Architecture\n\nHexagonal architecture"), capturedPrompt)
+        assertTrue(capturedPrompt.contains("# Review Focus\n\n- Transaction boundary"), capturedPrompt)
+    }
+
+    @Test
+    fun `filters ignored diff before context and prompt building`() {
+        var contextDiff = ""
+        var capturedPrompt = ""
+        val diff = """
+            diff --git a/src/Foo.java b/src/Foo.java
+            +++ b/src/Foo.java
+            @@ -1 +1 @@
+            +class Foo {}
+            diff --git a/generated/Generated.java b/generated/Generated.java
+            +++ b/generated/Generated.java
+            @@ -1 +1 @@
+            +class Generated {}
+        """.trimIndent()
+        val provider = object : AIProvider {
+            override fun review(prompt: String): String {
+                capturedPrompt = prompt
+                return "[]"
+            }
+        }
+        val orchestrator = ReviewOrchestrator(
+            diffProvider = { diff },
+            settingsProvider = { AISettingsState(apiKey = "test-key") },
+            providerFactory = { provider },
+            contextBuilder = { filteredDiff ->
+                contextDiff = filteredDiff
+                emptyList()
+            },
+            workspaceProvider = {
+                WorkspaceContext(
+                    rules = null,
+                    architecture = null,
+                    reviewFocus = null,
+                    ignorePatterns = listOf("generated/")
+                )
+            }
+        )
+
+        val result = orchestrator.reviewStagedDiff()
+
+        assertEquals(ReviewOutcome.Completed(emptyList()), result)
+        assertTrue(contextDiff.contains("src/Foo.java"), contextDiff)
+        assertFalse(contextDiff.contains("generated/Generated.java"), contextDiff)
+        assertTrue(capturedPrompt.contains("src/Foo.java"), capturedPrompt)
+        assertFalse(capturedPrompt.contains("generated/Generated.java"), capturedPrompt)
     }
 }

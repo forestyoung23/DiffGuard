@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CancellationException
 
 class OpenAIProviderTest {
     @Test
@@ -103,6 +104,89 @@ class OpenAIProviderTest {
         assertTrue(error.message.orEmpty().contains("HTTP 500"))
         assertTrue(error.message.orEmpty().contains("...[truncated]"))
         assertTrue(error.message.orEmpty().length < 2_100)
+    }
+
+    @Test
+    fun `uses structured api error message for unsuccessful response`() {
+        val provider = OpenAIProvider(
+            baseUrl = "https://api.example.com/v1",
+            apiKey = "test-key",
+            model = "test-model",
+            client = clientReturning(
+                code = 429,
+                contentType = "application/json",
+                body = """{"error":{"message":"quota exceeded","type":"rate_limit_error"}}"""
+            )
+        )
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            provider.review("review this diff")
+        }
+
+        assertEquals("DiffGuard 请求失败：HTTP 429 rate_limit_error: quota exceeded", error.message)
+    }
+
+    @Test
+    fun `throws clear error when successful response has no choices`() {
+        val provider = OpenAIProvider(
+            baseUrl = "https://api.example.com/v1",
+            apiKey = "test-key",
+            model = "test-model",
+            client = clientReturning(
+                code = 200,
+                contentType = "application/json",
+                body = """{"choices":[]}"""
+            )
+        )
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            provider.review("review this diff")
+        }
+
+        assertEquals("AI 服务返回成功响应，但没有 choices 内容。", error.message)
+    }
+
+    @Test
+    fun `throws clear error when response is truncated by model`() {
+        val provider = OpenAIProvider(
+            baseUrl = "https://api.example.com/v1",
+            apiKey = "test-key",
+            model = "test-model",
+            client = clientReturning(
+                code = 200,
+                contentType = "application/json",
+                body = """{"choices":[{"message":{"role":"assistant","content":"[]"},"finish_reason":"length"}]}"""
+            )
+        )
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            provider.review("review this diff")
+        }
+
+        assertEquals("AI 返回因长度限制被截断，请缩小 diff 或换用上下文更大的模型。", error.message)
+    }
+
+    @Test
+    fun `does not send request when cancellation token is already cancelled`() {
+        var requestSent = false
+        val provider = OpenAIProvider(
+            baseUrl = "https://api.example.com/v1",
+            apiKey = "test-key",
+            model = "test-model",
+            client = OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    requestSent = true
+                    chain.proceed(chain.request())
+                }
+                .build()
+        )
+        val token = ReviewCancellationToken().apply { cancel() }
+
+        assertThrows(CancellationException::class.java) {
+            provider.review("review this diff", token)
+        }
+
+        assertEquals(false, requestSent)
     }
 
     private fun clientReturning(code: Int, contentType: String, body: String): OkHttpClient =

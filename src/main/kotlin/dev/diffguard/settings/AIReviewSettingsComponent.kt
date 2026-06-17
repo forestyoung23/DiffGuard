@@ -3,12 +3,14 @@ package dev.diffguard.settings
 import dev.diffguard.model.AISettingsState
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.bindIntText
+import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import javax.swing.JComponent
 
 class AIReviewSettingsComponent {
     private val settings = AISettingsState()
+    private var clearApiKey: Boolean = false
     private val panel: DialogPanel = panel {
         group("Provider 配置") {
             row("Base URL") {
@@ -20,6 +22,10 @@ class AIReviewSettingsComponent {
                     .bindText(settings::apiKey)
                     .component
                 apiKeyField.echoChar = '\u2022'
+            }
+            row {
+                checkBox("清除已保存 API Key")
+                    .bindSelected(::clearApiKey)
             }
             row("Model") {
                 textField()
@@ -59,21 +65,25 @@ class AIReviewSettingsComponent {
             callTimeoutSeconds = settings.callTimeoutSeconds
         )
         val apiKeyUpdate = when {
-            settings.apiKey.isBlank() -> ApiKeyUpdate.Clear
+            clearApiKey -> ApiKeyUpdate.Clear
+            settings.apiKey.isBlank() -> ApiKeyUpdate.Keep
             else -> ApiKeyUpdate.Replace(settings.apiKey)
         }
         service.updateSettings(nextState, apiKeyUpdate)
+        settings.apiKey = ""
+        clearApiKey = false
         panel.reset()
     }
 
     fun resetFrom(state: AISettingsState) {
         settings.baseUrl = state.baseUrl
-        settings.apiKey = state.apiKey
+        settings.apiKey = ""
         settings.model = state.model
         settings.connectTimeoutSeconds = state.connectTimeoutSeconds
         settings.writeTimeoutSeconds = state.writeTimeoutSeconds
         settings.readTimeoutSeconds = state.readTimeoutSeconds
         settings.callTimeoutSeconds = state.callTimeoutSeconds
+        clearApiKey = false
         panel.reset()
     }
 }

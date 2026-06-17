@@ -173,4 +173,26 @@ class CodeContextBuilderTest {
 
         assertTrue(result.isEmpty())
     }
+
+    @Test
+    fun `parse diff can limit Java files for PSI context`() {
+        val diff = (1..3).joinToString("\n") { index ->
+            """
+                diff --git a/src/main/java/com/demo/File$index.java b/src/main/java/com/demo/File$index.java
+                +++ b/src/main/java/com/demo/File$index.java
+                @@ -1 +1 @@
+                +class File$index {}
+            """.trimIndent()
+        }
+
+        val result = DiffParser.parse(diff, maxJavaFiles = 2)
+
+        assertEquals(
+            listOf(
+                "src/main/java/com/demo/File1.java",
+                "src/main/java/com/demo/File2.java"
+            ),
+            result.keys.toList()
+        )
+    }
 }

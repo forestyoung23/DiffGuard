@@ -18,4 +18,29 @@ class GitStagedDiffProviderTest {
         assertTrue(UNSTAGED_DIFF_NAME_ONLY_PARAMETERS.contains("--no-color"))
         assertTrue(!UNSTAGED_DIFF_NAME_ONLY_PARAMETERS.contains("--cached"))
     }
+
+    @Test
+    fun `filters staged paths by unstaged paths only for a single repository`() {
+        val stagedPaths = setOf("src/App.java", "src/OnlyStaged.java")
+        val unstagedPathsByRoot = mapOf(
+            "/repo" to setOf("src/App.java")
+        )
+
+        val result = stagedPaths.filterStagedSafePaths(unstagedPathsByRoot)
+
+        assertEquals(setOf("src/OnlyStaged.java"), result)
+    }
+
+    @Test
+    fun `keeps staged paths for multiple repositories to avoid cross-root false matches`() {
+        val stagedPaths = setOf("src/App.java", "src/OnlyStaged.java")
+        val unstagedPathsByRoot = mapOf(
+            "/repo-a" to setOf("src/App.java"),
+            "/repo-b" to setOf("src/App.java")
+        )
+
+        val result = stagedPaths.filterStagedSafePaths(unstagedPathsByRoot)
+
+        assertEquals(stagedPaths, result)
+    }
 }
