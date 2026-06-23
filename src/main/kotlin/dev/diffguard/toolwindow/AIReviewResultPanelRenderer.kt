@@ -41,7 +41,7 @@ internal class AIReviewResultPanelRenderer {
     fun renderFindings(findings: List<ReviewFinding>): JComponent = rootPanel().apply {
         if (findings.isEmpty()) {
             add(
-                cardPanel().apply {
+                surfacePanel().apply {
                     add(titleLabel("DiffGuard 完成"))
                     add(Box.createVerticalStrut(6))
                     add(bodyText("DiffGuard 不能替代测试和人工审查，但当前 diff 没有发现明显风险。"))
@@ -62,13 +62,13 @@ internal class AIReviewResultPanelRenderer {
 
     private fun renderInfoState(title: String, detail: String, nextStep: String): JComponent = rootPanel().apply {
         add(
-            cardPanel().apply {
+            surfacePanel().apply {
                 add(titleLabel(title))
                 add(Box.createVerticalStrut(6))
                 add(bodyText(detail))
-                add(Box.createVerticalStrut(10))
-                add(sectionLabel("下一步"))
-                add(Box.createVerticalStrut(4))
+                add(Box.createVerticalStrut(12))
+                add(metaLabel("下一步"))
+                add(Box.createVerticalStrut(5))
                 add(bodyText(nextStep))
             }
         )
@@ -76,17 +76,17 @@ internal class AIReviewResultPanelRenderer {
 
     private fun renderParseFallback(state: ReviewUiState.ParseFallback): JComponent = rootPanel().apply {
         add(
-            cardPanel().apply {
+            surfacePanel().apply {
                 add(titleLabel(state.title))
                 add(Box.createVerticalStrut(6))
                 add(bodyText(state.detail))
-                add(Box.createVerticalStrut(10))
-                add(sectionLabel("原始返回预览"))
-                add(Box.createVerticalStrut(4))
+                add(Box.createVerticalStrut(12))
+                add(metaLabel("原始返回预览"))
+                add(Box.createVerticalStrut(5))
                 add(bodyText(state.rawResponsePreview))
-                add(Box.createVerticalStrut(10))
-                add(sectionLabel("下一步"))
-                add(Box.createVerticalStrut(4))
+                add(Box.createVerticalStrut(12))
+                add(metaLabel("下一步"))
+                add(Box.createVerticalStrut(5))
                 add(bodyText(state.nextStep))
             }
         )
@@ -95,29 +95,26 @@ internal class AIReviewResultPanelRenderer {
     private fun rootPanel(): JPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = UIUtil.getPanelBackground()
-        border = JBUI.Borders.empty(14, 14)
+        border = JBUI.Borders.empty(10, 12, 16, 12)
     }
 
-    private fun cardPanel(): JPanel = JPanel().apply {
+    private fun surfacePanel(): JPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        background = UIUtil.getPanelBackground()
+        background = UIUtil.getListBackground()
         border = BorderFactory.createCompoundBorder(
             JBUI.Borders.customLine(JBColor.border(), 1),
-            JBUI.Borders.empty(12, 14)
+            JBUI.Borders.empty(10, 12)
         )
         alignmentX = Component.LEFT_ALIGNMENT
     }
 
-    private fun summaryCard(findings: List<ReviewFinding>): JPanel = cardPanel().apply {
+    private fun summaryCard(findings: List<ReviewFinding>): JPanel = surfacePanel().apply {
         add(titleLabel("DiffGuard 完成"))
-        add(Box.createVerticalStrut(6))
+        add(Box.createVerticalStrut(5))
         add(bodyText(summaryText(findings)))
-        add(Box.createVerticalStrut(8))
-        add(bodyText("HIGH：建议提交前修复。MEDIUM：建议检查。LOW：可按需处理。"))
         add(Box.createVerticalStrut(10))
         add(
             JPanel(FlowLayout(FlowLayout.LEFT, 8, 0)).apply {
-                background = UIUtil.getPanelBackground()
                 isOpaque = false
                 alignmentX = Component.LEFT_ALIGNMENT
                 add(severityBadge("HIGH ${findings.countLevel("HIGH")}", "HIGH"))
@@ -125,57 +122,71 @@ internal class AIReviewResultPanelRenderer {
                 add(severityBadge("LOW ${findings.countLevel("LOW")}", "LOW"))
             }
         )
+        add(Box.createVerticalStrut(8))
+        add(hintText("HIGH 建议提交前修复，MEDIUM 建议检查，LOW 可按需处理。"))
     }
 
-    private fun findingCard(finding: ReviewFinding): JPanel = cardPanel().apply {
+    private fun findingCard(finding: ReviewFinding): JPanel = surfacePanel().apply {
         add(
             JPanel(BorderLayout(8, 0)).apply {
-                background = UIUtil.getPanelBackground()
                 isOpaque = false
                 alignmentX = Component.LEFT_ALIGNMENT
                 add(severityBadge(finding.level, finding.level), BorderLayout.WEST)
                 add(locationLabel(locationText(finding)), BorderLayout.CENTER)
             }
         )
-        add(Box.createVerticalStrut(8))
+        add(Box.createVerticalStrut(9))
         add(bodyText(finding.message))
     }
 
     private fun titleLabel(text: String): JBLabel = JBLabel(text).apply {
-        font = font.deriveFont(Font.BOLD)
+        font = UIUtil.getLabelFont().deriveFont(Font.BOLD, UIUtil.getLabelFont().size2D + 1f)
+        foreground = UIUtil.getLabelForeground()
         alignmentX = Component.LEFT_ALIGNMENT
     }
 
-    private fun sectionLabel(text: String): JBLabel = JBLabel(text).apply {
-        font = font.deriveFont(Font.BOLD, font.size2D - 1f)
+    private fun metaLabel(text: String): JBLabel = JBLabel(text).apply {
+        font = UIUtil.getLabelFont().deriveFont(Font.BOLD, UIUtil.getLabelFont().size2D - 1f)
         foreground = UIUtil.getContextHelpForeground()
         alignmentX = Component.LEFT_ALIGNMENT
     }
 
     private fun locationLabel(text: String): JBTextArea = plainText(text).apply {
-        font = Font(Font.MONOSPACED, Font.PLAIN, font.size)
+        font = UIUtil.getLabelFont()
         foreground = UIUtil.getContextHelpForeground()
-        isOpaque = false
+        lineWrap = true
+        wrapStyleWord = false
     }
 
     private fun bodyText(text: String): JBTextArea = plainText(text).apply {
         lineWrap = true
         wrapStyleWord = true
-        isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
     }
 
+    private fun hintText(text: String): JBTextArea = bodyText(text).apply {
+        foreground = UIUtil.getContextHelpForeground()
+        font = UIUtil.getLabelFont().deriveFont(UIUtil.getLabelFont().size2D - 1f)
+    }
+
     private fun severityBadge(text: String, level: String): JBTextArea = plainText(text).apply {
-        font = font.deriveFont(Font.BOLD, font.size2D - 1f)
+        font = UIUtil.getLabelFont().deriveFont(Font.BOLD, UIUtil.getLabelFont().size2D - 1f)
         foreground = severityForeground(level)
         background = severityBackground(level)
         isOpaque = true
-        border = JBUI.Borders.empty(3, 8)
+        border = BorderFactory.createCompoundBorder(
+            JBUI.Borders.customLine(severityBorder(level), 1),
+            JBUI.Borders.empty(2, 7)
+        )
+        isFocusable = false
     }
 
     private fun plainText(text: String): JBTextArea = JBTextArea(text).apply {
         isEditable = false
         isFocusable = true
+        isOpaque = false
+        font = UIUtil.getLabelFont()
+        foreground = UIUtil.getLabelForeground()
         border = JBUI.Borders.empty()
     }
 
@@ -220,9 +231,16 @@ internal class AIReviewResultPanelRenderer {
     }
 
     private fun severityBackground(level: String): Color = when (level.uppercase()) {
-        "HIGH" -> JBColor(Color(0xF6D4D4), Color(0x4A2A2A))
-        "MEDIUM" -> JBColor(Color(0xF8E3B8), Color(0x4A3820))
-        "LOW" -> JBColor(Color(0xD7E6F7), Color(0x24384F))
-        else -> JBColor(Color(0xE5E7EB), Color(0x3A3D42))
+        "HIGH" -> JBColor(Color(0xFFF1F1), Color(0x3A2628))
+        "MEDIUM" -> JBColor(Color(0xFFF6E3), Color(0x3A3020))
+        "LOW" -> JBColor(Color(0xEEF5FF), Color(0x243246))
+        else -> JBColor(Color(0xF3F4F6), Color(0x313336))
+    }
+
+    private fun severityBorder(level: String): Color = when (level.uppercase()) {
+        "HIGH" -> JBColor(Color(0xE6B8B8), Color(0x6B3E42))
+        "MEDIUM" -> JBColor(Color(0xE5C58A), Color(0x6A5430))
+        "LOW" -> JBColor(Color(0xB9D3F0), Color(0x3E5775))
+        else -> JBColor(Color(0xD1D5DB), Color(0x4B4D52))
     }
 }

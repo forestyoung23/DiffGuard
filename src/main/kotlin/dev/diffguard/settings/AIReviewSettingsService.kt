@@ -13,7 +13,6 @@ import com.intellij.openapi.components.Storage
 
 sealed interface ApiKeyUpdate {
     data object Keep : ApiKeyUpdate
-    data object Clear : ApiKeyUpdate
     data class Replace(val apiKey: String) : ApiKeyUpdate
 }
 
@@ -49,11 +48,6 @@ class AIReviewSettingsService : PersistentStateComponent<AISettingsState> {
         when (apiKeyUpdate) {
             ApiKeyUpdate.Keep -> {
                 legacyApiKey = ""
-            }
-            ApiKeyUpdate.Clear -> {
-                legacyApiKey = ""
-                cachedApiKey = ""
-                storeApiKeyAsync(null)
             }
             is ApiKeyUpdate.Replace -> {
                 legacyApiKey = ""

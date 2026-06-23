@@ -1,6 +1,7 @@
 package dev.diffguard.action
 
 import dev.diffguard.ai.ReviewCancellationToken
+import dev.diffguard.git.SelectedChangesDiffProvider
 import dev.diffguard.review.ReviewOrchestrator
 import dev.diffguard.review.ReviewOutcome
 import dev.diffguard.toolwindow.AIReviewToolWindowService
@@ -14,6 +15,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.wm.ToolWindowManager
 
 class AIReviewAction : AnAction("Review with DiffGuard") {
@@ -23,6 +25,13 @@ class AIReviewAction : AnAction("Review with DiffGuard") {
         val project = event.project ?: return
         val toolWindowService = project.service<AIReviewToolWindowService>()
 
+        val reviewChanges = ReviewChangesResolver.resolve(event)
+        if (reviewChanges.isEmpty()) {
+            ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.show()
+            toolWindowService.showState(ReviewUiState.NoChanges())
+            return
+        }
+
         ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.show()
         if (!toolWindowService.tryStartReview()) {
             toolWindowService.showState(ReviewUiState.Reviewing("DiffGuard 已在进行中，请等待当前任务完成。"))
@@ -30,7 +39,7 @@ class AIReviewAction : AnAction("Review with DiffGuard") {
         }
 
         toolWindowService.showState(ReviewUiState.Reviewing("正在读取本次变更..."))
-        ReviewTask(project, toolWindowService).queue()
+        ReviewTask(project, toolWindowService, reviewChanges).queue()
     }
 
     override fun update(event: AnActionEvent) {
@@ -48,7 +57,8 @@ class AIReviewAction : AnAction("Review with DiffGuard") {
 
     private inner class ReviewTask(
         private val taskProject: Project,
-        private val toolWindowService: AIReviewToolWindowService
+        private val toolWindowService: AIReviewToolWindowService,
+        private val selectedChanges: List<Change>
     ) : Task.Backgroundable(taskProject, "DiffGuard staged changes", true) {
         private var outcome: ReviewOutcome? = null
         private lateinit var cancellationToken: ReviewCancellationToken
@@ -56,6 +66,8 @@ class AIReviewAction : AnAction("Review with DiffGuard") {
         override fun run(indicator: ProgressIndicator) {
             indicator.isIndeterminate = true
             cancellationToken = ReviewCancellationToken { indicator.isCanceled }
+
+            val diffProvider = SelectedChangesDiffProvider(taskProject, selectedChanges)
             outcome = ReviewOrchestrator(
                 project = taskProject,
                 onStatus = { status ->
@@ -63,7 +75,8 @@ class AIReviewAction : AnAction("Review with DiffGuard") {
                     indicator.text = status
                     showReviewingStatus(taskProject, toolWindowService, status)
                 },
-                cancellationToken = cancellationToken
+                cancellationToken = cancellationToken,
+                customDiffProvider = { diffProvider.getDiff() }
             ).reviewStagedDiff()
         }
 

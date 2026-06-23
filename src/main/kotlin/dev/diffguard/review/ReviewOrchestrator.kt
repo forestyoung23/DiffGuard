@@ -34,7 +34,7 @@ fun ReviewOutcome.compatibilityFindings(): List<ReviewFinding> = when (this) {
             level = "LOW",
             file = "Git",
             line = null,
-            message = "没有可 Review 的 staged 变更。请先 stage 需要审查的文件。"
+            message = "没有可 Review 的变更。请先勾选需要审查的文件。"
         )
     )
     ReviewOutcome.NeedsConfiguration -> listOf(
@@ -77,9 +77,10 @@ class ReviewOrchestrator(
     constructor(
         project: Project,
         onStatus: (String) -> Unit = {},
-        cancellationToken: ReviewCancellationToken = ReviewCancellationToken()
+        cancellationToken: ReviewCancellationToken = ReviewCancellationToken(),
+        customDiffProvider: (() -> String)? = null
     ) : this(
-        diffProvider = { GitStagedDiffProvider(project).getStagedDiff() },
+        diffProvider = customDiffProvider ?: { GitStagedDiffProvider(project).getStagedDiff() },
         settingsProvider = { AIReviewSettingsService.getInstance().stateWithSecrets() },
         onStatus = onStatus,
         contextBuilder = { diff -> buildStagedSafeCodeContext(project, diff) },

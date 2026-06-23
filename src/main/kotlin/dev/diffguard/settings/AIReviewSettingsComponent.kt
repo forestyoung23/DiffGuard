@@ -2,7 +2,6 @@ package dev.diffguard.settings
 
 import dev.diffguard.model.AISettingsState
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
@@ -10,7 +9,6 @@ import javax.swing.JComponent
 
 class AIReviewSettingsComponent {
     private val settings = AISettingsState()
-    private var clearApiKey: Boolean = false
     private val panel: DialogPanel = panel {
         group("Provider 配置") {
             row("Base URL") {
@@ -23,27 +21,9 @@ class AIReviewSettingsComponent {
                     .component
                 apiKeyField.echoChar = '\u2022'
             }
-            row {
-                checkBox("清除已保存 API Key")
-                    .bindSelected(::clearApiKey)
-            }
             row("Model") {
                 textField()
                     .bindText(settings::model)
-            }
-        }
-        group("Advanced / 超时配置") {
-            row("Connect Timeout Seconds") {
-                intTextField().bindIntText(settings::connectTimeoutSeconds)
-            }
-            row("Write Timeout Seconds") {
-                intTextField().bindIntText(settings::writeTimeoutSeconds)
-            }
-            row("Read Timeout Seconds") {
-                intTextField().bindIntText(settings::readTimeoutSeconds)
-            }
-            row("Call Timeout Seconds") {
-                intTextField().bindIntText(settings::callTimeoutSeconds)
             }
         }
     }
@@ -55,23 +35,23 @@ class AIReviewSettingsComponent {
     fun applyTo(service: AIReviewSettingsService) {
         panel.apply()
         settings.apiKey = settings.apiKey.trim()
+        val currentState = service.nonSecretState()
         val nextState = AISettingsState(
             baseUrl = settings.baseUrl.trim(),
             apiKey = "",
             model = settings.model.trim(),
-            connectTimeoutSeconds = settings.connectTimeoutSeconds,
-            writeTimeoutSeconds = settings.writeTimeoutSeconds,
-            readTimeoutSeconds = settings.readTimeoutSeconds,
-            callTimeoutSeconds = settings.callTimeoutSeconds
+            connectTimeoutSeconds = currentState.connectTimeoutSeconds,
+            writeTimeoutSeconds = currentState.writeTimeoutSeconds,
+            readTimeoutSeconds = currentState.readTimeoutSeconds,
+            callTimeoutSeconds = currentState.callTimeoutSeconds
         )
-        val apiKeyUpdate = when {
-            clearApiKey -> ApiKeyUpdate.Clear
-            settings.apiKey.isBlank() -> ApiKeyUpdate.Keep
-            else -> ApiKeyUpdate.Replace(settings.apiKey)
+        val apiKeyUpdate = if (settings.apiKey.isBlank()) {
+            ApiKeyUpdate.Keep
+        } else {
+            ApiKeyUpdate.Replace(settings.apiKey)
         }
         service.updateSettings(nextState, apiKeyUpdate)
         settings.apiKey = ""
-        clearApiKey = false
         panel.reset()
     }
 
@@ -79,11 +59,6 @@ class AIReviewSettingsComponent {
         settings.baseUrl = state.baseUrl
         settings.apiKey = ""
         settings.model = state.model
-        settings.connectTimeoutSeconds = state.connectTimeoutSeconds
-        settings.writeTimeoutSeconds = state.writeTimeoutSeconds
-        settings.readTimeoutSeconds = state.readTimeoutSeconds
-        settings.callTimeoutSeconds = state.callTimeoutSeconds
-        clearApiKey = false
         panel.reset()
     }
 }

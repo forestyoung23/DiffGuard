@@ -8,13 +8,12 @@ import org.junit.jupiter.api.Test
 import java.awt.Component
 import java.awt.Container
 import javax.swing.JButton
-import javax.swing.JCheckBox
 import javax.swing.JLabel
 import javax.swing.JPasswordField
 
 class AIReviewSettingsComponentTest {
     @Test
-    fun `reset with existing api key leaves password field empty and shows clear option`() {
+    fun `reset with existing api key leaves password field empty`() {
         val component = AIReviewSettingsComponent()
 
         component.resetFrom(AISettingsState(apiKey = "sk-test-key"))
@@ -23,7 +22,6 @@ class AIReviewSettingsComponentTest {
         assertEquals("", String(apiKeyField.password))
         assertEquals('\u2022', apiKeyField.echoChar)
         assertFalse(visibleNonPasswordTextIn(component.getPanel()).contains("sk-test-key"))
-        assertTrue(componentsIn(component.getPanel()).any { it is JCheckBox && it.text.contains("清除") })
         assertFalse(component.isModified())
     }
 
@@ -48,24 +46,22 @@ class AIReviewSettingsComponentTest {
     }
 
     @Test
-    fun `selecting clear api key marks settings as modified`() {
+    fun `settings panel hides advanced timeout fields`() {
         val component = AIReviewSettingsComponent()
-        component.resetFrom(AISettingsState(apiKey = "sk-test-key"))
+        component.resetFrom(AISettingsState())
 
-        clearApiKeyCheckBoxIn(component).isSelected = true
+        val visibleText = visibleNonPasswordTextIn(component.getPanel())
 
-        assertTrue(component.isModified())
+        assertFalse(visibleText.contains("Connect Timeout Seconds"))
+        assertFalse(visibleText.contains("Write Timeout Seconds"))
+        assertFalse(visibleText.contains("Read Timeout Seconds"))
+        assertFalse(visibleText.contains("Call Timeout Seconds"))
     }
 
     private fun apiKeyFieldIn(component: AIReviewSettingsComponent): JPasswordField =
         componentsIn(component.getPanel())
             .filterIsInstance<JPasswordField>()
             .single()
-
-    private fun clearApiKeyCheckBoxIn(component: AIReviewSettingsComponent): JCheckBox =
-        componentsIn(component.getPanel())
-            .filterIsInstance<JCheckBox>()
-            .single { it.text.contains("清除") }
 
     private fun visibleNonPasswordTextIn(component: Component): String =
         componentsIn(component)

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.awt.Component
 import java.awt.Container
+import java.awt.Font
 import javax.swing.JLabel
 import javax.swing.text.JTextComponent
 
@@ -33,7 +34,8 @@ class ReviewUiStateRendererTest {
         val text = visibleTextIn(renderer.render(ReviewUiState.NoChanges()))
 
         assertTrue(text.contains("没有可 Review 的变更"), text)
-        assertTrue(text.contains("当前 staged diff 为空"), text)
+        assertTrue(text.contains("当前 Review 范围为空"), text)
+        assertTrue(text.contains("请先勾选需要审查的文件"), text)
     }
 
     @Test
@@ -87,9 +89,23 @@ class ReviewUiStateRendererTest {
 
         assertTrue(text.contains("DiffGuard 完成"), text)
         assertTrue(text.contains("发现 2 个问题，其中 1 个 HIGH 需要优先处理。"), text)
-        assertTrue(text.contains("HIGH：建议提交前修复"), text)
-        assertTrue(text.contains("MEDIUM：建议检查"), text)
-        assertTrue(text.contains("LOW：可按需处理"), text)
+        assertTrue(text.contains("HIGH 建议提交前修复，MEDIUM 建议检查，LOW 可按需处理。"), text)
+    }
+
+    @Test
+    fun `renders review text with ide label font instead of monospace log font`() {
+        val component = renderer.render(
+            ReviewUiState.Completed(
+                listOf(ReviewFinding("LOW", "A.kt", 1, "低风险"))
+            )
+        )
+
+        val textFonts = componentsIn(component)
+            .filterIsInstance<JTextComponent>()
+            .map { it.font.family }
+
+        assertTrue(textFonts.isNotEmpty(), "Expected text components in rendered review result")
+        assertTrue(textFonts.none { it == Font.MONOSPACED }, textFonts.joinToString())
     }
 
     private fun visibleTextIn(component: Component): String = componentsIn(component)
