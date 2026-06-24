@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.awt.Component
 import java.awt.Container
+import java.awt.event.MouseEvent
 import javax.swing.JComponent
 import javax.swing.JEditorPane
 import javax.swing.JLabel
@@ -109,6 +110,18 @@ class AIReviewResultPanelRendererTest {
         )
     }
 
+    @Test
+    fun `clicking finding location invokes selection callback`() {
+        val finding = ReviewFinding(level = "HIGH", file = "UserService.kt", line = 42, message = "可能空指针")
+        var selectedFinding: ReviewFinding? = null
+        val component = AIReviewResultPanelRenderer(onFindingSelected = { selectedFinding = it })
+            .renderFindings(listOf(finding))
+
+        clickTextComponent(component, "UserService.kt:42")
+
+        assertEquals(finding, selectedFinding)
+    }
+
     private fun visibleTextIn(component: Component): String = componentsIn(component)
         .flatMap { current ->
             when (current) {
@@ -122,6 +135,23 @@ class AIReviewResultPanelRendererTest {
     private fun labelTextsIn(component: Component): List<String> = componentsIn(component)
         .filterIsInstance<JLabel>()
         .mapNotNull { it.text }
+
+    private fun clickTextComponent(component: Component, text: String) {
+        val textComponent = componentsIn(component)
+            .filterIsInstance<JTextComponent>()
+            .single { it.text == text }
+        val event = MouseEvent(
+            textComponent,
+            MouseEvent.MOUSE_CLICKED,
+            System.currentTimeMillis(),
+            0,
+            1,
+            1,
+            1,
+            false
+        )
+        textComponent.mouseListeners.forEach { it.mouseClicked(event) }
+    }
 
     private fun componentsIn(component: Component): List<Component> =
         listOf(component) + if (component is Container) {

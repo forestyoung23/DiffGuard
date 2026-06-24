@@ -1,12 +1,15 @@
 package dev.diffguard.review
 
 import dev.diffguard.ai.AIProvider
+import dev.diffguard.ai.ReviewCancellationToken
 import dev.diffguard.model.AISettingsState
 import dev.diffguard.workspace.WorkspaceContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CancellationException
 
 class ReviewOrchestratorTest {
     @Test
@@ -162,5 +165,36 @@ class ReviewOrchestratorTest {
         assertFalse(contextDiff.contains("generated/Generated.java"), contextDiff)
         assertTrue(capturedPrompt.contains("src/Foo.java"), capturedPrompt)
         assertFalse(capturedPrompt.contains("generated/Generated.java"), capturedPrompt)
+    }
+
+    @Test
+    fun `propagates cancellation from context analysis without calling AI`() {
+        val cancellationToken = ReviewCancellationToken()
+        val statuses = mutableListOf<String>()
+        var providerCalled = false
+        val provider = object : AIProvider {
+            override fun review(prompt: String): String {
+                providerCalled = true
+                return "[]"
+            }
+        }
+        val orchestrator = ReviewOrchestrator(
+            diffProvider = { "diff --git a/App.java b/App.java\n+++ b/App.java\n@@ -1 +1 @@\n+class App {}" },
+            settingsProvider = { AISettingsState(apiKey = "test-key") },
+            providerFactory = { provider },
+            contextBuilder = {
+                cancellationToken.cancel()
+                cancellationToken.throwIfCancellationRequested()
+                emptyList()
+            },
+            cancellationToken = cancellationToken,
+            onStatus = { statuses.add(it) }
+        )
+
+        assertThrows(CancellationException::class.java) {
+            orchestrator.reviewStagedDiff()
+        }
+        assertFalse(providerCalled)
+        assertFalse(statuses.any { it.startsWith("PSI 分析失败") }, statuses.toString())
     }
 }

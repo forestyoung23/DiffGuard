@@ -9,15 +9,21 @@ import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
+import java.awt.Container
+import java.awt.Cursor
 import java.awt.FlowLayout
 import java.awt.Font
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-internal class AIReviewResultPanelRenderer {
+internal class AIReviewResultPanelRenderer(
+    private val onFindingSelected: ((ReviewFinding) -> Unit)? = null
+) {
     fun render(state: ReviewUiState): JComponent = when (state) {
         ReviewUiState.Ready -> renderInfoState(
             title = "DiffGuard",
@@ -137,6 +143,7 @@ internal class AIReviewResultPanelRenderer {
         )
         add(Box.createVerticalStrut(9))
         add(bodyText(finding.message))
+        enableFindingClick(this, finding)
     }
 
     private fun titleLabel(text: String): JBLabel = JBLabel(text).apply {
@@ -194,6 +201,22 @@ internal class AIReviewResultPanelRenderer {
         "${finding.file}:${finding.line}"
     } else {
         finding.file
+    }
+
+    private fun enableFindingClick(component: Component, finding: ReviewFinding) {
+        val callback = onFindingSelected ?: return
+        if (component is JComponent) {
+            component.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            component.toolTipText = "Open ${locationText(finding)}"
+            component.addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(event: MouseEvent) {
+                    callback(finding)
+                }
+            })
+        }
+        if (component is Container) {
+            component.components.forEach { enableFindingClick(it, finding) }
+        }
     }
 
     private fun summaryText(findings: List<ReviewFinding>): String {

@@ -18,6 +18,7 @@ import dev.diffguard.workspace.WorkspaceLoader
 import dev.diffguard.workspace.WorkspaceLoadResult
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import java.util.concurrent.CancellationException
 
 private val LOG = Logger.getInstance(ReviewOrchestrator::class.java)
 
@@ -105,6 +106,7 @@ class ReviewOrchestrator(
         }
 
         // PSI Context 分析
+        val contextBuilder = contextBuilder
         val codeContexts = if (contextBuilder != null) {
             onStatus("正在分析代码上下文...")
             try {
@@ -113,6 +115,8 @@ class ReviewOrchestrator(
                 cancellationToken.throwIfCancellationRequested()
                 logCodeContexts(contexts)
                 contexts
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 LOG.warn("PSI 分析失败，使用纯 diff 模式", e)
                 onStatus("PSI 分析失败，使用纯 diff 模式: ${e.message}")

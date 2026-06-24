@@ -17,7 +17,8 @@ import javax.swing.JPanel
 
 class AIReviewToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val view = AIReviewToolWindowView()
+        val navigator = ReviewFindingNavigator.forProject(project)
+        val view = AIReviewToolWindowView(onFindingSelected = navigator::navigate)
         project.service<AIReviewToolWindowService>().view = view
 
         val content = toolWindow.contentManager.factory.createContent(view.component, "Results", false)
@@ -25,8 +26,10 @@ class AIReviewToolWindowFactory : ToolWindowFactory {
     }
 }
 
-class AIReviewToolWindowView {
-    private val renderer = AIReviewResultPanelRenderer()
+class AIReviewToolWindowView(
+    onFindingSelected: ((ReviewFinding) -> Unit)? = null
+) {
+    private val renderer = AIReviewResultPanelRenderer(onFindingSelected)
     private val contentPanel = JPanel(BorderLayout()).apply {
         background = UIUtil.getPanelBackground()
     }

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.awt.Component
 import java.awt.Container
+import java.awt.event.MouseEvent
 import javax.swing.JEditorPane
 import javax.swing.JLabel
 import javax.swing.text.JTextComponent
@@ -103,6 +104,23 @@ class AIReviewToolWindowViewTest {
         assertEquals(0, scrollPane.viewport.viewPosition.y)
     }
 
+    @Test
+    fun `clicking finding location forwards selected finding`() {
+        val finding = ReviewFinding(
+            level = "MEDIUM",
+            file = "src/main/kotlin/dev/diffguard/action/AIReviewAction.kt",
+            line = 27,
+            message = "状态判断"
+        )
+        var selectedFinding: ReviewFinding? = null
+        val view = AIReviewToolWindowView(onFindingSelected = { selectedFinding = it })
+
+        view.showFindings(listOf(finding))
+        clickTextComponent(view.component, "src/main/kotlin/dev/diffguard/action/AIReviewAction.kt:27")
+
+        assertEquals(finding, selectedFinding)
+    }
+
     private fun visibleTextIn(view: AIReviewToolWindowView): String =
         componentsIn(view.component)
             .mapNotNull { component ->
@@ -116,6 +134,23 @@ class AIReviewToolWindowViewTest {
 
     private fun scrollPaneIn(view: AIReviewToolWindowView): JBScrollPane =
         componentsIn(view.component).filterIsInstance<JBScrollPane>().single()
+
+    private fun clickTextComponent(component: Component, text: String) {
+        val textComponent = componentsIn(component)
+            .filterIsInstance<JTextComponent>()
+            .single { it.text == text }
+        val event = MouseEvent(
+            textComponent,
+            MouseEvent.MOUSE_CLICKED,
+            System.currentTimeMillis(),
+            0,
+            1,
+            1,
+            1,
+            false
+        )
+        textComponent.mouseListeners.forEach { it.mouseClicked(event) }
+    }
 
     private fun componentsIn(component: Component): List<Component> =
         listOf(component) + if (component is Container) {
