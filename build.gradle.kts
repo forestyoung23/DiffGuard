@@ -15,14 +15,34 @@ kotlin {
 }
 
 intellijPlatform {
+    buildSearchableOptions = false
+
     pluginConfiguration {
+        id = providers.gradleProperty("pluginId")
         name = providers.gradleProperty("pluginName")
         version = providers.gradleProperty("pluginVersion")
+        description = providers.gradleProperty("pluginDescription")
+        changeNotes = providers.gradleProperty("pluginChangeNotes")
+
+        vendor {
+            name = providers.gradleProperty("pluginVendorName")
+        }
 
         ideaVersion {
             sinceBuild = providers.gradleProperty("pluginSinceBuild")
             untilBuild = providers.gradleProperty("pluginUntilBuild")
         }
+    }
+
+    signing {
+        certificateChain = providers.environmentVariable("JETBRAINS_CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("JETBRAINS_PRIVATE_KEY")
+        password = providers.environmentVariable("JETBRAINS_PRIVATE_KEY_PASSWORD")
+    }
+
+    publishing {
+        token = providers.environmentVariable("JETBRAINS_MARKETPLACE_TOKEN")
+        channels = providers.gradleProperty("pluginPublishChannel").map { listOf(it) }
     }
 }
 

@@ -4,8 +4,37 @@
     <vendor>DiffGuard</vendor>
 
     <description><![CDATA[
-        Review staged git diffs with an OpenAI-compatible API before commit.
+        <p>
+            DiffGuard reviews selected Git changes in IntelliJ IDEA before commit using an
+            OpenAI-compatible chat completion API configured by the user.
+        </p>
+        <p>
+            It adds a <b>Review with DiffGuard</b> action to the Commit and Changes views,
+            sends the selected unified diff and local code context to the configured provider,
+            and renders structured findings in a dedicated DiffGuard tool window.
+        </p>
+        <ul>
+            <li>Review selected changes before commit.</li>
+            <li>Use OpenAI-compatible providers with a custom Base URL, API key, and model.</li>
+            <li>Store API keys in IntelliJ PasswordSafe instead of plugin files.</li>
+            <li>Show findings grouped by severity with clickable file locations.</li>
+            <li>Support workspace guidance files and ignore patterns for project-specific review focus.</li>
+        </ul>
+        <p>
+            Privacy: DiffGuard sends code diffs and optional context only to the provider endpoint
+            configured by the user. DiffGuard does not operate a hosted service and does not bundle
+            API keys into the plugin package.
+        </p>
     ]]></description>
+
+    <change-notes><![CDATA[
+        <ul>
+            <li>Initial Marketplace release.</li>
+            <li>Review selected Git changes with OpenAI-compatible models.</li>
+            <li>Display structured findings in the DiffGuard tool window.</li>
+            <li>Store API keys through IntelliJ PasswordSafe.</li>
+        </ul>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
