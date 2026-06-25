@@ -1,72 +1,76 @@
 # DiffGuard
 
-DiffGuard 是一个 IntelliJ IDEA 2024+ 插件 MVP，用于在提交代码前对当前 staged diff 执行 AI Code Review。
+English | [简体中文](README.zh-CN.md)
 
-## 功能
+DiffGuard is an IntelliJ IDEA plugin that reviews selected Git changes before commit with a user-configured OpenAI-compatible API.
 
-- 在 Commit/VCS 相关入口提供 `Review with DiffGuard` Action。
-- 获取当前选中的 Git changes，并生成 unified diff。
-- 调用用户配置的 OpenAI Compatible Chat Completions API。
-- 在 `DiffGuard` ToolWindow 中展示审查结果。
-- 支持解析纯 JSON、Markdown fenced JSON，以及文本中嵌入的 JSON 数组。
-- 当 AI 返回无法解析时，会把原始响应作为 LOW 级结果展示。
-- 点击结果卡片可跳转到对应文件和行号。
-- 支持 workspace guidance 和 ignore patterns，用于补充项目级审查规则。
+## Features
 
-## 配置
+- Adds a `Review with DiffGuard` action to Commit/VCS entry points.
+- Reviews selected Git changes and generates unified diff content.
+- Calls an OpenAI-compatible Chat Completions API configured by the user.
+- Displays findings in the `DiffGuard` tool window.
+- Parses plain JSON, fenced JSON in Markdown, and JSON arrays embedded in text.
+- Shows raw fallback content as a LOW-level finding when the AI response cannot be parsed.
+- Opens the related file and line when a finding card is clicked.
+- Supports workspace guidance and ignore patterns for project-specific review focus.
 
-打开 `Settings / Tools / DiffGuard`，配置：
+## Configuration
 
-- `Base URL`：OpenAI Compatible API 地址，默认 `https://api.openai.com/v1`
-- `API Key`：API Key，会保存到 IntelliJ PasswordSafe；设置页会以密码形式隐藏已保存的 Key，清空后保存会删除 Key
-- `Model`：模型名称，默认 `gpt-4o-mini`
+Open `Settings / Tools / DiffGuard` and configure:
 
-## 隐私与数据
+- `Base URL`: OpenAI-compatible API endpoint. Default: `https://api.openai.com/v1`.
+- `API Key`: stored in IntelliJ PasswordSafe. The settings page masks saved keys.
+- `Model`: model name. Default: `gpt-4o-mini`.
 
-DiffGuard 不运营托管服务，也不会把 API Key 打包进插件包。
+## Privacy And Data
 
-- API Key 存储在 IntelliJ PasswordSafe 中。
-- 非敏感配置存储在 IDE 的应用级配置中。
-- 执行 Review 时，插件会把选中的 unified diff、可用的代码上下文和 workspace guidance 发送到用户配置的 `Base URL`。
-- 插件不会主动发送数据到 DiffGuard 作者控制的服务器。
-- 用户应只配置自己信任的 OpenAI-compatible API Provider，并确认团队允许将相关代码片段发送给该 Provider。
+DiffGuard does not operate a hosted review service and does not bundle API keys into the plugin package.
 
-## 使用方式
+- API keys are stored in IntelliJ PasswordSafe.
+- Non-secret settings are stored in IDE application-level settings.
+- During review, the plugin sends selected unified diff content, available code context, and workspace guidance to the configured `Base URL`.
+- The plugin does not send data to servers controlled by the DiffGuard author unless the user explicitly configures such an endpoint.
+- Users should configure only providers they trust and confirm that sending code snippets to that provider is allowed by their organization.
 
-1. 在 Git 中 stage 需要提交的文件。
-2. 在 Commit/VCS 相关入口点击 `Review with DiffGuard`。
-3. 插件会打开 `DiffGuard` ToolWindow，并显示 `Reviewing...`。
-4. 审查完成后，结果会按风险等级、文件、行号和消息展示。
+## Usage
 
-## 本地运行
+1. Select or stage the Git changes you want to review.
+2. Click `Review with DiffGuard` from the Commit/VCS entry points.
+3. The plugin opens the `DiffGuard` tool window and shows review progress.
+4. Review results are displayed by severity, file, line number, and message.
+
+## Local Development
+
+Run the plugin in a development IDE:
 
 ```bash
 JAVA_HOME="/path/to/jdk-17" ./gradlew runIde
 ```
 
-## 测试
+Run tests:
 
 ```bash
 JAVA_HOME="/path/to/jdk-17" ./gradlew test
 ```
 
-## 构建插件
+Build the plugin:
 
 ```bash
 JAVA_HOME="/path/to/jdk-17" ./gradlew buildPlugin
 ```
 
-构建产物位于：
+The plugin archive is generated in:
 
 ```text
 build/distributions/
 ```
 
-## 发布到 JetBrains Marketplace
+## Publishing To JetBrains Marketplace
 
-首次发布建议先在 JetBrains Marketplace 网页手动上传 `build/distributions/*.zip`。后续版本可以使用 Gradle 的 `publishPlugin` 任务自动上传。
+For the first release, upload `build/distributions/*.zip` manually in JetBrains Marketplace. Later releases can use the Gradle `publishPlugin` task.
 
-发布前检查：
+Recommended checks before publishing:
 
 ```bash
 ./gradlew test
@@ -74,7 +78,7 @@ build/distributions/
 ./gradlew buildPlugin
 ```
 
-签名插件需要通过环境变量提供证书和私钥，仓库中不要提交这些值：
+Plugin signing uses environment variables. Do not commit certificates, private keys, or tokens:
 
 ```bash
 export JETBRAINS_CERTIFICATE_CHAIN="-----BEGIN CERTIFICATE-----..."
@@ -83,14 +87,14 @@ export JETBRAINS_PRIVATE_KEY_PASSWORD="..."
 ./gradlew signPlugin
 ```
 
-发布到 Marketplace 需要 JetBrains Marketplace token：
+Publishing requires a JetBrains Marketplace token:
 
 ```bash
 export JETBRAINS_MARKETPLACE_TOKEN="perm:..."
 ./gradlew publishPlugin
 ```
 
-发布配置位于 `gradle.properties` 和 `build.gradle.kts`：
+Release configuration is defined in `gradle.properties` and `build.gradle.kts`:
 
 - `pluginId=dev.diffguard`
 - `pluginVersion=0.1.0`
@@ -98,10 +102,11 @@ export JETBRAINS_MARKETPLACE_TOKEN="perm:..."
 - `pluginUntilBuild=253.*`
 - `pluginPublishChannel=default`
 
-每次上传新版本前必须递增 `pluginVersion`。
-真实 homepage、source code、support email 等链接建议在 JetBrains Marketplace 插件页面填写；不要在仓库中提交猜测或临时链接。
+Increment `pluginVersion` before uploading each new version.
 
-### Marketplace 页面建议
+Fill real homepage, source code, and support links on the JetBrains Marketplace plugin page. Do not commit placeholder links.
+
+### Marketplace Copy
 
 Short description:
 
@@ -115,13 +120,16 @@ Privacy summary:
 DiffGuard sends selected Git diffs and optional local context only to the OpenAI-compatible API endpoint configured by the user. API keys are stored in IntelliJ PasswordSafe and are not bundled with the plugin.
 ```
 
-## MVP 不包含
+## Not Included
 
-- 自动修复
-- Agent
-- 向量数据库
-- 多轮对话
-- 本地模型
-- 用户系统
-- 企业规则
-- 配置中心
+- Automatic code fixes
+- Agent workflows
+- Vector databases
+- Multi-turn chat
+- Local models
+- User accounts
+- Hosted configuration service
+
+## License
+
+DiffGuard is licensed under the [MIT License](LICENSE).
