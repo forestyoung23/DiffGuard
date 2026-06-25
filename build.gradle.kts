@@ -44,6 +44,15 @@ intellijPlatform {
         token = providers.environmentVariable("JETBRAINS_MARKETPLACE_TOKEN")
         channels = providers.gradleProperty("pluginPublishChannel").map { listOf(it) }
     }
+
+    pluginVerification {
+        ides {
+            ide(
+                IntelliJPlatformType.IntellijIdeaCommunity,
+                providers.gradleProperty("platformVersion").get()
+            )
+        }
+    }
 }
 
 dependencies {
@@ -55,6 +64,7 @@ dependencies {
         bundledPlugin("Git4Idea")
         bundledPlugin("com.intellij.java")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
+        pluginVerifier()
     }
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

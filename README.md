@@ -75,6 +75,7 @@ Recommended checks before publishing:
 ```bash
 ./gradlew test
 ./gradlew verifyPluginStructure
+./gradlew verifyPlugin
 ./gradlew buildPlugin
 ```
 

@@ -75,6 +75,7 @@ build/distributions/
 ```bash
 ./gradlew test
 ./gradlew verifyPluginStructure
+./gradlew verifyPlugin
 ./gradlew buildPlugin
 ```
 
