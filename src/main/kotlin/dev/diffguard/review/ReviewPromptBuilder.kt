@@ -19,8 +19,10 @@ class ReviewPromptBuilder(
      */
     fun build(stagedDiff: String, codeContexts: List<CodeContext> = emptyList()): String = buildString {
         appendLine("You are a senior code reviewer. Review the following staged unified diff.")
-        appendLine("Prioritize concrete correctness, security, concurrency, transaction, and data consistency risks.")
+        appendLine("Prioritize correctness, security, concurrency, transaction, data consistency, and boundary-condition risks.")
         appendLine("Only report issues supported by the visible diff or code context.")
+        appendLine("Do not report generic advice, speculative risks, duplicate findings, or pure style preferences.")
+        appendLine("Only report readability issues when they can hide a real behavior or maintenance risk.")
         appendLine("If content is truncated, mention only risks that are supported by the visible diff/context.")
         appendLine()
 
@@ -52,17 +54,13 @@ class ReviewPromptBuilder(
     "level": "HIGH",
     "file": "UserService.java",
     "line": 42,
-    "category": "bug",
-    "confidence": "high",
-    "evidence": "The changed code dereferences user without checking null.",
     "message": "问题描述（中文）"
   }
 ]""")
         appendLine()
         appendLine("Use level HIGH, MEDIUM, or LOW. Use null for line when no exact line is available.")
-        appendLine("Use category bug, security, transaction, concurrency, readability, or other.")
-        appendLine("Use confidence high, medium, or low.")
-        appendLine("Evidence must be a short concrete reason from the visible diff/context.")
+        appendLine("Point file and line to the most relevant added or modified line.")
+        appendLine("Each message must describe the problem, the impact, and a concrete suggested fix in Chinese.")
         appendLine("The message must be written in Chinese.")
     }
 

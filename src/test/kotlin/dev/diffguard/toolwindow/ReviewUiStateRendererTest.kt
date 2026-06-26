@@ -44,7 +44,8 @@ class ReviewUiStateRendererTest {
 
         assertTrue(text.contains("DiffGuard 进行中"), text)
         assertTrue(text.contains("正在请求 AI，非流式模型可能需要等待一段时间..."), text)
-        assertTrue(text.contains("请稍候，Review 完成后会自动显示结果。"), text)
+        assertTrue(text.contains("读取变更 -> 分析上下文 -> 请求 AI -> 解析结果"), text)
+        assertTrue(!text.contains("请稍候，Review 完成后会自动显示结果。"), text)
         assertTrue(!text.contains("请保持当前窗口打开，非流式模型可能需要等待一段时间。"), text)
     }
 
@@ -89,7 +90,7 @@ class ReviewUiStateRendererTest {
 
         assertTrue(text.contains("DiffGuard 完成"), text)
         assertTrue(text.contains("发现 2 个问题，其中 1 个 HIGH 需要优先处理。"), text)
-        assertTrue(text.contains("HIGH 建议提交前修复，MEDIUM 建议检查，LOW 可按需处理。"), text)
+        assertTrue(!text.contains("HIGH 建议提交前修复，MEDIUM 建议检查，LOW 可按需处理。"), text)
     }
 
     @Test

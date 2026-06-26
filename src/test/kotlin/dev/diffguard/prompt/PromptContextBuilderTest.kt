@@ -48,4 +48,34 @@ class PromptContextBuilderTest {
         assertFalse(prompt.contains("# Architecture"), prompt)
         assertTrue(prompt.contains("# Git Diff"), prompt)
     }
+
+    @Test
+    fun `prompt sets quality bar for concrete actionable findings`() {
+        val prompt = PromptContextBuilder()
+            .build(
+                stagedDiff = "diff --git a/Foo.java b/Foo.java",
+                codeContexts = emptyList(),
+                workspaceContext = null
+            )
+
+        assertTrue(prompt.contains("Prioritize correctness, security, concurrency, transaction, data consistency, and boundary-condition risks."), prompt)
+        assertTrue(prompt.contains("Do not report generic advice, speculative risks, duplicate findings, or pure style preferences."), prompt)
+        assertTrue(prompt.contains("Only report readability issues when they can hide a real behavior or maintenance risk."), prompt)
+        assertTrue(prompt.contains("Each message must describe the problem, the impact, and a concrete suggested fix in Chinese."), prompt)
+        assertTrue(prompt.contains("Point file and line to the most relevant added or modified line."), prompt)
+        assertTrue(prompt.contains("Workspace rules can explain project-specific risk, but every finding must still be supported by this diff or code context."), prompt)
+    }
+
+    @Test
+    fun `prompt keeps existing finding schema without metadata requirements`() {
+        val prompt = PromptContextBuilder().build(stagedDiff = "diff", codeContexts = emptyList())
+
+        assertTrue(prompt.contains("\"level\""), prompt)
+        assertTrue(prompt.contains("\"file\""), prompt)
+        assertTrue(prompt.contains("\"line\""), prompt)
+        assertTrue(prompt.contains("\"message\""), prompt)
+        assertFalse(prompt.contains("\"category\""), prompt)
+        assertFalse(prompt.contains("\"confidence\""), prompt)
+        assertFalse(prompt.contains("\"evidence\""), prompt)
+    }
 }

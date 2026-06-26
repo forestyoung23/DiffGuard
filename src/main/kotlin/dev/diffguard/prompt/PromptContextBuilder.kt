@@ -20,6 +20,10 @@ class PromptContextBuilder(
     ): String = buildString {
         appendLine("You are a senior code reviewer. Review the following staged unified diff.")
         appendLine("Use workspace rules as authoritative project-specific review guidance when present.")
+        appendLine("Workspace rules can explain project-specific risk, but every finding must still be supported by this diff or code context.")
+        appendLine("Prioritize correctness, security, concurrency, transaction, data consistency, and boundary-condition risks.")
+        appendLine("Do not report generic advice, speculative risks, duplicate findings, or pure style preferences.")
+        appendLine("Only report readability issues when they can hide a real behavior or maintenance risk.")
         appendLine("If content is truncated, mention only risks that are supported by the visible diff/context.")
         appendLine()
 
@@ -133,6 +137,8 @@ class PromptContextBuilder(
 ]""")
         appendLine()
         appendLine("Use level HIGH, MEDIUM, or LOW. Use null for line when no exact line is available.")
+        appendLine("Point file and line to the most relevant added or modified line.")
+        appendLine("Each message must describe the problem, the impact, and a concrete suggested fix in Chinese.")
         appendLine("The message must be written in Chinese.")
     }
 

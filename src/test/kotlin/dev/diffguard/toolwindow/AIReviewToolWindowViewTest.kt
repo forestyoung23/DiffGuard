@@ -12,6 +12,8 @@ import java.awt.Container
 import java.awt.event.MouseEvent
 import javax.swing.JEditorPane
 import javax.swing.JLabel
+import javax.swing.ScrollPaneConstants
+import javax.swing.Scrollable
 import javax.swing.text.JTextComponent
 
 class AIReviewToolWindowViewTest {
@@ -23,6 +25,16 @@ class AIReviewToolWindowViewTest {
         assertEquals(1, components.filterIsInstance<JBScrollPane>().size)
         assertFalse(components.any { it is JBTable })
         assertFalse(components.any { it is JEditorPane })
+    }
+
+    @Test
+    fun `scroll content tracks viewport width to avoid horizontal clipping`() {
+        val view = AIReviewToolWindowView()
+        val viewportView = scrollPaneIn(view).viewport.view
+
+        assertTrue(viewportView is Scrollable)
+        assertTrue((viewportView as Scrollable).scrollableTracksViewportWidth)
+        assertEquals(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER, scrollPaneIn(view).horizontalScrollBarPolicy)
     }
 
     @Test

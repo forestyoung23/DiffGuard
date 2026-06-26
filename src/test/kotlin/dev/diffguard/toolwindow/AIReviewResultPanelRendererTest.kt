@@ -9,8 +9,11 @@ import java.awt.Component
 import java.awt.Container
 import java.awt.event.MouseEvent
 import javax.swing.JComponent
+import javax.swing.JButton
 import javax.swing.JEditorPane
 import javax.swing.JLabel
+import javax.swing.JTextArea
+import javax.swing.plaf.basic.BasicButtonUI
 import javax.swing.text.JTextComponent
 
 class AIReviewResultPanelRendererTest {
@@ -21,9 +24,32 @@ class AIReviewResultPanelRendererTest {
         val component = renderer.renderStatus("正在请求 <AI> & 等待")
 
         val visibleText = visibleTextIn(component)
-        assertTrue(visibleText.contains("DiffGuard"), visibleText)
+        assertTrue(visibleText.contains("DiffGuard 进行中"), visibleText)
         assertTrue(visibleText.contains("正在请求 <AI> & 等待"), visibleText)
+        assertTrue(visibleText.contains("读取变更 -> 分析上下文 -> 请求 AI -> 解析结果"), visibleText)
+        assertFalse(visibleText.contains("下一步"), visibleText)
         assertFalse(componentsIn(component).any { it is JEditorPane })
+    }
+
+    @Test
+    fun `renderStatus does not duplicate IDE progress controls inside the result panel`() {
+        val component = renderer.renderStatus("正在请求 AI")
+
+        assertFalse(componentsIn(component).any { it is javax.swing.JProgressBar })
+        assertFalse(componentsIn(component).any { it.name?.startsWith("review-progress-step-") == true })
+    }
+
+    @Test
+    fun `severity filter buttons use flat segmented styling instead of default button chrome`() {
+        val component = renderer.renderFindings(
+            listOf(ReviewFinding(level = "MEDIUM", file = "A.kt", line = 1, message = "中风险"))
+        )
+
+        val buttons = componentsIn(component).filterIsInstance<JButton>()
+        assertEquals(listOf("All", "High", "Medium", "Low"), buttons.map { it.text })
+        assertTrue(buttons.all { it.ui is BasicButtonUI })
+        assertTrue(buttons.none { it.isBorderPainted })
+        assertTrue(buttons.none { it.isFocusPainted })
     }
 
     @Test
@@ -51,6 +77,7 @@ class AIReviewResultPanelRendererTest {
         assertTrue(visibleText.contains("HIGH 1"), visibleText)
         assertTrue(visibleText.contains("MEDIUM 1"), visibleText)
         assertTrue(visibleText.contains("LOW 1"), visibleText)
+        assertFalse(visibleText.contains("HIGH 建议提交前修复，MEDIUM 建议检查，LOW 可按需处理。"), visibleText)
         assertTrue(visibleText.contains("UserService.kt:42"), visibleText)
         assertTrue(visibleText.contains("可能空指针"), visibleText)
         assertTrue(visibleText.contains("OrderDao.kt:18"), visibleText)
@@ -60,7 +87,7 @@ class AIReviewResultPanelRendererTest {
     }
 
     @Test
-    fun `renderFindings shows metadata without action buttons`() {
+    fun `renderFindings shows metadata with severity filter buttons`() {
         val component = renderer.renderFindings(
             listOf(
                 ReviewFinding(
@@ -82,12 +109,46 @@ class AIReviewResultPanelRendererTest {
         assertTrue(visibleText.contains("dto may be null"), visibleText)
         assertTrue(visibleText.contains("UserService.kt:42"), visibleText)
         assertTrue(visibleText.contains("README.md"), visibleText)
-        assertFalse(buttonTextsIn(component).contains("全部"))
+        assertTrue(buttonTextsIn(component).contains("All"))
         assertFalse(buttonTextsIn(component).contains("HIGH"))
-        assertFalse(buttonTextsIn(component).contains("MEDIUM"))
-        assertFalse(buttonTextsIn(component).contains("LOW"))
+        assertTrue(buttonTextsIn(component).contains("High"))
+        assertTrue(buttonTextsIn(component).contains("Medium"))
+        assertTrue(buttonTextsIn(component).contains("Low"))
         assertFalse(buttonTextsIn(component).contains("复制摘要"))
         assertFalse(buttonTextsIn(component).contains("重新审查"))
+    }
+
+    @Test
+    fun `severity filter buttons update visible findings`() {
+        val component = renderer.renderFindings(
+            listOf(
+                ReviewFinding(level = "HIGH", file = "High.kt", line = 1, message = "高风险"),
+                ReviewFinding(level = "MEDIUM", file = "Medium.kt", line = 2, message = "中风险"),
+                ReviewFinding(level = "LOW", file = "Low.kt", line = 3, message = "低风险")
+            )
+        )
+
+        clickButton(component, "Medium")
+
+        val visibleText = visibleTextIn(component)
+        assertFalse(visibleText.contains("High.kt:1"), visibleText)
+        assertTrue(visibleText.contains("Medium.kt:2"), visibleText)
+        assertFalse(visibleText.contains("Low.kt:3"), visibleText)
+        assertTrue(visibleText.contains("Showing Medium"), visibleText)
+    }
+
+    @Test
+    fun `finding location uses no-wrap text so long paths do not collapse into a narrow column`() {
+        val longLocation = "src/main/kotlin/dev/diffguard/review/ReviewPromptBuilder.kt:59"
+        val component = renderer.renderFindings(
+            listOf(ReviewFinding(level = "MEDIUM", file = longLocation.substringBeforeLast(":"), line = 59, message = "中风险"))
+        )
+
+        val location = componentsIn(component)
+            .filterIsInstance<JTextArea>()
+            .single { it.text == longLocation }
+
+        assertFalse(location.lineWrap)
     }
 
     @Test
@@ -184,9 +245,16 @@ class AIReviewResultPanelRendererTest {
         textComponent.mouseListeners.forEach { it.mouseClicked(event) }
     }
 
+    private fun clickButton(component: Component, text: String) {
+        componentsIn(component)
+            .filterIsInstance<JButton>()
+            .single { it.text == text }
+            .doClick()
+    }
+
     private fun buttonTextsIn(component: Component): List<String> =
         componentsIn(component)
-            .filterIsInstance<javax.swing.JButton>()
+            .filterIsInstance<JButton>()
             .map { it.text }
 
     private fun componentsIn(component: Component): List<Component> =

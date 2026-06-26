@@ -11,9 +11,13 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Point
+import java.awt.Dimension
+import java.awt.Rectangle
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.Scrollable
+import javax.swing.SwingConstants
 
 class AIReviewToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -31,12 +35,24 @@ class AIReviewToolWindowView(
     onFindingSelected: ((ReviewFinding) -> Unit)? = null
 ) {
     private val renderer = AIReviewResultPanelRenderer(onFindingSelected)
-    private val contentPanel = JPanel(BorderLayout()).apply {
+    private val contentPanel = object : JPanel(BorderLayout()), Scrollable {
+        override fun getPreferredScrollableViewportSize(): Dimension = preferredSize
+
+        override fun getScrollableUnitIncrement(visibleRect: Rectangle, orientation: Int, direction: Int): Int = 16
+
+        override fun getScrollableBlockIncrement(visibleRect: Rectangle, orientation: Int, direction: Int): Int =
+            if (orientation == SwingConstants.VERTICAL) visibleRect.height else visibleRect.width
+
+        override fun getScrollableTracksViewportWidth(): Boolean = true
+
+        override fun getScrollableTracksViewportHeight(): Boolean = false
+    }.apply {
         background = UIUtil.getPanelBackground()
     }
     private val scrollPane = JBScrollPane(contentPanel).apply {
         border = JBUI.Borders.empty()
         viewport.background = UIUtil.getPanelBackground()
+        horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
     }
 
     val component: JPanel = JPanel(BorderLayout()).apply {

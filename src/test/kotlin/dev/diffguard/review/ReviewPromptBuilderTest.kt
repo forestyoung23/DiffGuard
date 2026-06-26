@@ -25,13 +25,16 @@ class ReviewPromptBuilderTest {
     }
 
     @Test
-    fun `prompt requests finding metadata and evidence backed issues only`() {
+    fun `prompt requests concrete actionable evidence backed issues only`() {
         val prompt = builder.build("diff --git a/Foo.java", emptyList())
 
-        assertTrue(prompt.contains("\"category\""), prompt)
-        assertTrue(prompt.contains("\"confidence\""), prompt)
-        assertTrue(prompt.contains("\"evidence\""), prompt)
         assertTrue(prompt.contains("Only report issues supported by the visible diff or code context."), prompt)
+        assertTrue(prompt.contains("Prioritize correctness, security, concurrency, transaction, data consistency, and boundary-condition risks."), prompt)
+        assertTrue(prompt.contains("Do not report generic advice, speculative risks, duplicate findings, or pure style preferences."), prompt)
+        assertTrue(prompt.contains("Each message must describe the problem, the impact, and a concrete suggested fix in Chinese."), prompt)
+        assertFalse(prompt.contains("\"category\""), prompt)
+        assertFalse(prompt.contains("\"confidence\""), prompt)
+        assertFalse(prompt.contains("\"evidence\""), prompt)
     }
 
     @Test
