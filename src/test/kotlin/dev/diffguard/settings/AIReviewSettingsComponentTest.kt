@@ -177,7 +177,8 @@ class AIReviewSettingsComponentTest {
         waitForText(component, "连接失败")
 
         val statusLabel = connectionStatusLabelIn(component)
-        assertTrue(statusLabel.text.length <= 180, statusLabel.text)
+        assertTrue(statusLabel.text.length <= 96, statusLabel.text)
+        assertTrue(statusLabel.preferredSize.width <= 480, "status label width was ${statusLabel.preferredSize.width}")
         assertTrue(statusLabel.text.endsWith("..."), statusLabel.text)
         assertEquals("连接失败：$longError", statusLabel.toolTipText)
     }

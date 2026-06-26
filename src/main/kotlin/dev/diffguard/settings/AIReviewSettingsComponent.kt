@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
+import java.awt.Dimension
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
 import javax.swing.JComponent
@@ -28,7 +29,18 @@ class AIReviewSettingsComponent(
     private lateinit var modelField: JTextField
     private lateinit var apiKeyField: javax.swing.JPasswordField
     private lateinit var testConnectionButton: JButton
-    private val connectionStatusLabel = JLabel("")
+    private val connectionStatusLabel = object : JLabel("") {
+        override fun getPreferredSize(): Dimension {
+            val preferredSize = super.getPreferredSize()
+            return Dimension(
+                preferredSize.width.coerceAtMost(MAX_CONNECTION_STATUS_WIDTH),
+                preferredSize.height
+            )
+        }
+
+        override fun getMaximumSize(): Dimension =
+            Dimension(MAX_CONNECTION_STATUS_WIDTH, super.getMaximumSize().height)
+    }
     private val panel: DialogPanel = panel {
         group("Provider 配置") {
             row("Provider") {
@@ -101,6 +113,7 @@ class AIReviewSettingsComponent(
         settings.model = state.model
         panel.reset()
         connectionStatusLabel.text = ""
+        connectionStatusLabel.toolTipText = null
     }
 
     private fun testConnection() {
@@ -112,7 +125,7 @@ class AIReviewSettingsComponent(
         )
         val cancellationToken = ReviewCancellationToken()
         testConnectionButton.isEnabled = false
-        connectionStatusLabel.text = "正在测试连接..."
+        showConnectionStatus("正在测试连接...")
         runConnectionTest(
             task = { connectionTester.test(state, cancellationToken) },
             onTimeout = { cancellationToken.cancel() },
@@ -221,7 +234,8 @@ class AIReviewSettingsComponent(
 
     private companion object {
         const val DEFAULT_CONNECTION_TEST_UI_TIMEOUT_MILLIS = 16_000L
-        const val MAX_CONNECTION_STATUS_CHARS = 160
+        const val MAX_CONNECTION_STATUS_CHARS = 80
+        const val MAX_CONNECTION_STATUS_WIDTH = 480
         const val ELLIPSIS = "..."
     }
 }
