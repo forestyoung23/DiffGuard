@@ -163,6 +163,25 @@ class AIReviewSettingsComponentTest {
         assertTrue(cancelled.await(1, TimeUnit.SECONDS), "connection request was not cancelled after UI timeout")
     }
 
+    @Test
+    fun `long connection error is shortened in settings panel and preserved in tooltip`() {
+        val longError = "连接失败：" + "Invalid token ".repeat(40)
+        val component = AIReviewSettingsComponent(
+            connectionTester = ProviderConnectionTester(providerFactory = { FailingProvider(longError) }),
+            savedApiKeyProvider = { "sk-saved" },
+            runConnectionTestInBackground = { task, onResult -> onResult(task()) }
+        )
+        component.resetFrom(AISettingsState(apiKey = "sk-saved"))
+
+        clickButton(component.getPanel(), "Test Connection")
+        waitForText(component, "连接失败")
+
+        val statusLabel = connectionStatusLabelIn(component)
+        assertTrue(statusLabel.text.length <= 180, statusLabel.text)
+        assertTrue(statusLabel.text.endsWith("..."), statusLabel.text)
+        assertEquals("连接失败：$longError", statusLabel.toolTipText)
+    }
+
     private fun apiKeyFieldIn(component: AIReviewSettingsComponent): JPasswordField =
         componentsIn(component.getPanel())
             .filterIsInstance<JPasswordField>()
@@ -183,6 +202,11 @@ class AIReviewSettingsComponentTest {
         componentsIn(component.getPanel())
             .filterIsInstance<JButton>()
             .single { it.text == "Test Connection" }
+
+    private fun connectionStatusLabelIn(component: AIReviewSettingsComponent): JLabel =
+        componentsIn(component.getPanel())
+            .filterIsInstance<JLabel>()
+            .single { it.text.contains("连接失败") || it.toolTipText?.contains("连接失败") == true }
 
     private fun clickButton(component: Component, text: String) {
         val button = componentsIn(component)
@@ -245,5 +269,10 @@ class AIReviewSettingsComponentTest {
             Thread.sleep(5_000)
             return "[]"
         }
+    }
+
+    private class FailingProvider(private val message: String) : dev.diffguard.ai.AIProvider {
+        override fun review(prompt: String): String = error(message)
+        override fun review(prompt: String, cancellationToken: dev.diffguard.ai.ReviewCancellationToken): String = error(message)
     }
 }

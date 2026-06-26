@@ -124,11 +124,26 @@ class AIReviewSettingsComponent(
     }
 
     private fun showConnectionResult(result: ConnectionTestResult) {
-        connectionStatusLabel.text = when (result) {
+        showConnectionStatus(
+            when (result) {
             is ConnectionTestResult.Succeeded -> result.message
             is ConnectionTestResult.Failed -> result.message
-        }
+            }
+        )
     }
+
+    private fun showConnectionStatus(message: String) {
+        val displayMessage = message.truncateForStatusLabel()
+        connectionStatusLabel.text = displayMessage
+        connectionStatusLabel.toolTipText = message.takeIf { it != displayMessage }
+    }
+
+    private fun String.truncateForStatusLabel(): String =
+        if (length <= MAX_CONNECTION_STATUS_CHARS) {
+            this
+        } else {
+            take(MAX_CONNECTION_STATUS_CHARS - ELLIPSIS.length) + ELLIPSIS
+        }
 
     private fun runConnectionTest(
         task: () -> ConnectionTestResult,
@@ -206,5 +221,7 @@ class AIReviewSettingsComponent(
 
     private companion object {
         const val DEFAULT_CONNECTION_TEST_UI_TIMEOUT_MILLIS = 16_000L
+        const val MAX_CONNECTION_STATUS_CHARS = 160
+        const val ELLIPSIS = "..."
     }
 }
