@@ -1,143 +1,143 @@
-# DiffGuard Icon and Result Navigation Implementation Plan
+# DiffGuard 图标与结果导航实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **给 agentic workers：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 按任务逐步执行本计划。步骤使用 checkbox（`- [ ]`）语法跟踪。
 
-**Goal:** Add a custom DG Mark plugin icon and make review findings clickable so users can jump to the related file and line.
+**目标：** 添加自定义 DG Mark 插件图标，并让 Review findings 可点击，使用户能跳转到相关文件和行号。
 
-**Architecture:** Keep rendering and navigation separate. The renderer exposes clickable finding cards through a callback, while the tool window view wires that callback to a project-aware navigator. Plugin icons are static SVG resources registered from `plugin.xml`.
+**架构：** 保持渲染和导航分离。renderer 通过回调暴露可点击的 finding 卡片，ToolWindow view 将该回调连接到感知 project 的 navigator。插件图标是静态 SVG resource，并从 `plugin.xml` 注册。
 
-**Tech Stack:** Kotlin, IntelliJ Platform Swing UI DSL, IntelliJ VirtualFile/OpenFileDescriptor APIs, JUnit 5, Gradle IntelliJ plugin.
+**技术栈：** Kotlin、IntelliJ Platform Swing UI DSL、IntelliJ VirtualFile/OpenFileDescriptor API、JUnit 5、Gradle IntelliJ plugin。
 
 ---
 
-## File Structure
+## 文件结构
 
-- Create `src/main/kotlin/dev/diffguard/toolwindow/ReviewFindingNavigator.kt`: project-aware file resolution, editor navigation, and missing-file notification hook.
-- Modify `src/main/kotlin/dev/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`: add optional click callback and make finding cards/location rows clickable.
-- Modify `src/main/kotlin/dev/diffguard/toolwindow/AIReviewToolWindowFactory.kt`: pass `Project` into the view and wire the default navigator.
-- Create `src/main/resources/icons/diffguard.svg`: DG Mark icon.
-- Modify `src/main/resources/META-INF/plugin.xml`: register the icon for tool window and review action.
-- Modify `src/test/kotlin/dev/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`: prove click callback behavior without HTML editor panes.
-- Modify `src/test/kotlin/dev/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`: adapt view construction to project-optional constructor.
-- Create `src/test/kotlin/dev/diffguard/toolwindow/ReviewFindingNavigatorTest.kt`: verify path/line resolution behavior using a fake opener/reporter.
+- 创建 `src/main/kotlin/dev/diffguard/toolwindow/ReviewFindingNavigator.kt`：感知 project 的文件解析、编辑器导航和缺失文件通知 hook。
+- 修改 `src/main/kotlin/dev/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`：添加可选点击回调，并让 finding 卡片/位置行可点击。
+- 修改 `src/main/kotlin/dev/diffguard/toolwindow/AIReviewToolWindowFactory.kt`：将 `Project` 传入 view，并接入默认 navigator。
+- 创建 `src/main/resources/icons/diffguard.svg`：DG Mark 图标。
+- 修改 `src/main/resources/META-INF/plugin.xml`：为 ToolWindow 和 Review action 注册图标。
+- 修改 `src/test/kotlin/dev/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`：在不使用 HTML editor pane 的情况下证明点击回调行为。
+- 修改 `src/test/kotlin/dev/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`：适配 project 可选构造函数的 view 构造方式。
+- 创建 `src/test/kotlin/dev/diffguard/toolwindow/ReviewFindingNavigatorTest.kt`：使用 fake opener/reporter 验证路径/行号解析行为。
 
-## Task 1: Renderer Click Callback
+## 任务 1：Renderer 点击回调
 
-**Files:**
-- Modify: `src/main/kotlin/dev/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`
-- Test: `src/test/kotlin/dev/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`
+**文件：**
+- 修改：`src/main/kotlin/dev/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`
+- 测试：`src/test/kotlin/dev/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`
 
-- [ ] **Step 1: Write failing renderer callback test**
+- [ ] **步骤 1：编写失败的 renderer 回调测试**
 
-Add a test that renders a finding with `onFindingSelected`, finds the location text component, clicks it through its mouse listeners, and asserts the original `ReviewFinding` was received.
+添加一个测试：使用 `onFindingSelected` 渲染 finding，找到位置文本组件，通过 mouse listener 点击它，并断言收到的是原始 `ReviewFinding`。
 
-- [ ] **Step 2: Run focused test and verify RED**
+- [ ] **步骤 2：运行聚焦测试并确认红灯**
 
-Run: `./gradlew test --tests dev.diffguard.toolwindow.AIReviewResultPanelRendererTest`
+运行：`./gradlew test --tests dev.diffguard.toolwindow.AIReviewResultPanelRendererTest`
 
-Expected: compile failure or assertion failure because the renderer constructor does not yet accept `onFindingSelected`.
+预期：编译失败或断言失败，因为 renderer 构造函数尚未接收 `onFindingSelected`。
 
-- [ ] **Step 3: Implement minimal clickable renderer**
+- [ ] **步骤 3：实现最小可点击 renderer**
 
-Update the renderer constructor to accept `private val onFindingSelected: ((ReviewFinding) -> Unit)? = null`. In `findingCard`, attach a hand cursor, tooltip, and mouse listener to the card and location row when the callback is present. Invoke the callback with the clicked finding.
+更新 renderer 构造函数，使其接收 `private val onFindingSelected: ((ReviewFinding) -> Unit)? = null`。在 `findingCard` 中，当回调存在时，为卡片和位置行添加手形 cursor、tooltip 和 mouse listener。点击后用对应 finding 调用回调。
 
-- [ ] **Step 4: Run focused test and verify GREEN**
+- [ ] **步骤 4：运行聚焦测试并确认绿灯**
 
-Run: `./gradlew test --tests dev.diffguard.toolwindow.AIReviewResultPanelRendererTest`
+运行：`./gradlew test --tests dev.diffguard.toolwindow.AIReviewResultPanelRendererTest`
 
-Expected: PASS.
+预期：PASS。
 
-## Task 2: Navigator
+## 任务 2：Navigator
 
-**Files:**
-- Create: `src/main/kotlin/dev/diffguard/toolwindow/ReviewFindingNavigator.kt`
-- Test: `src/test/kotlin/dev/diffguard/toolwindow/ReviewFindingNavigatorTest.kt`
+**文件：**
+- 创建：`src/main/kotlin/dev/diffguard/toolwindow/ReviewFindingNavigator.kt`
+- 测试：`src/test/kotlin/dev/diffguard/toolwindow/ReviewFindingNavigatorTest.kt`
 
-- [ ] **Step 1: Write failing navigator tests**
+- [ ] **步骤 1：编写失败的 navigator 测试**
 
-Test that a finding file path resolves relative to a supplied base path, converts one-based line numbers to zero-based editor line numbers, uses zero for missing/invalid lines, and reports missing files.
+测试 finding 文件路径会基于给定 base path 解析，将从 1 开始的行号转换为编辑器从 0 开始的行号，对缺失/无效行号使用 0，并报告缺失文件。
 
-- [ ] **Step 2: Run focused test and verify RED**
+- [ ] **步骤 2：运行聚焦测试并确认红灯**
 
-Run: `./gradlew test --tests dev.diffguard.toolwindow.ReviewFindingNavigatorTest`
+运行：`./gradlew test --tests dev.diffguard.toolwindow.ReviewFindingNavigatorTest`
 
-Expected: compile failure because `ReviewFindingNavigator` does not exist.
+预期：编译失败，因为 `ReviewFindingNavigator` 尚不存在。
 
-- [ ] **Step 3: Implement navigator with injectable dependencies**
+- [ ] **步骤 3：用可注入依赖实现 navigator**
 
-Create `ReviewFindingNavigator` with constructor dependencies for `basePath`, file existence lookup, opener, and missing-file reporter. Add a companion `forProject(project: Project)` that uses `LocalFileSystem`, `OpenFileDescriptor`, and `NotificationGroupManager`.
+创建 `ReviewFindingNavigator`，构造函数依赖包含 `basePath`、文件存在性查询、opener 和缺失文件 reporter。添加 companion `forProject(project: Project)`，使用 `LocalFileSystem`、`OpenFileDescriptor` 和 `NotificationGroupManager`。
 
-- [ ] **Step 4: Run focused test and verify GREEN**
+- [ ] **步骤 4：运行聚焦测试并确认绿灯**
 
-Run: `./gradlew test --tests dev.diffguard.toolwindow.ReviewFindingNavigatorTest`
+运行：`./gradlew test --tests dev.diffguard.toolwindow.ReviewFindingNavigatorTest`
 
-Expected: PASS.
+预期：PASS。
 
-## Task 3: Wire Tool Window Navigation
+## 任务 3：接入 ToolWindow 导航
 
-**Files:**
-- Modify: `src/main/kotlin/dev/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
-- Test: `src/test/kotlin/dev/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`
+**文件：**
+- 修改：`src/main/kotlin/dev/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
+- 测试：`src/test/kotlin/dev/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`
 
-- [ ] **Step 1: Write/update view wiring test**
+- [ ] **步骤 1：编写/更新 view 接线测试**
 
-Add a test that constructs `AIReviewToolWindowView(onFindingSelected = { ... })`, renders findings, clicks the location text, and asserts the callback receives the finding.
+添加一个测试：构造 `AIReviewToolWindowView(onFindingSelected = { ... })`，渲染 findings，点击位置文本，并断言回调收到该 finding。
 
-- [ ] **Step 2: Run focused test and verify RED**
+- [ ] **步骤 2：运行聚焦测试并确认红灯**
 
-Run: `./gradlew test --tests dev.diffguard.toolwindow.AIReviewToolWindowViewTest`
+运行：`./gradlew test --tests dev.diffguard.toolwindow.AIReviewToolWindowViewTest`
 
-Expected: compile failure or assertion failure because view wiring does not expose the callback yet.
+预期：编译失败或断言失败，因为 view 接线尚未暴露回调。
 
-- [ ] **Step 3: Implement view wiring**
+- [ ] **步骤 3：实现 view 接线**
 
-Let `AIReviewToolWindowView` accept `onFindingSelected: ((ReviewFinding) -> Unit)? = null` and initialize `AIReviewResultPanelRenderer(onFindingSelected)`. In `AIReviewToolWindowFactory`, construct `ReviewFindingNavigator.forProject(project)` and pass `navigator::navigate`.
+让 `AIReviewToolWindowView` 接收 `onFindingSelected: ((ReviewFinding) -> Unit)? = null`，并初始化 `AIReviewResultPanelRenderer(onFindingSelected)`。在 `AIReviewToolWindowFactory` 中构造 `ReviewFindingNavigator.forProject(project)`，并传入 `navigator::navigate`。
 
-- [ ] **Step 4: Run focused test and verify GREEN**
+- [ ] **步骤 4：运行聚焦测试并确认绿灯**
 
-Run: `./gradlew test --tests dev.diffguard.toolwindow.AIReviewToolWindowViewTest`
+运行：`./gradlew test --tests dev.diffguard.toolwindow.AIReviewToolWindowViewTest`
 
-Expected: PASS.
+预期：PASS。
 
-## Task 4: Icon Resource Registration
+## 任务 4：图标资源注册
 
-**Files:**
-- Create: `src/main/resources/icons/diffguard.svg`
-- Modify: `src/main/resources/META-INF/plugin.xml`
+**文件：**
+- 创建：`src/main/resources/icons/diffguard.svg`
+- 修改：`src/main/resources/META-INF/plugin.xml`
 
-- [ ] **Step 1: Add DG Mark SVG**
+- [ ] **步骤 1：添加 DG Mark SVG**
 
-Create a 16x16-friendly SVG using the approved DG Mark direction. Use a blue rounded base, white DG strokes, and a green check/guard accent.
+按已确认的 DG Mark 方向创建适配 16x16 的 SVG。使用蓝色圆角底、白色 DG 笔画，以及绿色 check/guard 强调元素。
 
-- [ ] **Step 2: Register icon**
+- [ ] **步骤 2：注册图标**
 
-Add `icon="/icons/diffguard.svg"` to the `toolWindow` element and the `DiffGuard.AIReviewAction` action element in `plugin.xml`.
+在 `plugin.xml` 的 `toolWindow` 元素和 `DiffGuard.AIReviewAction` action 元素上添加 `icon="/icons/diffguard.svg"`。
 
-- [ ] **Step 3: Run plugin build**
+- [ ] **步骤 3：运行插件构建**
 
-Run: `./gradlew buildPlugin`
+运行：`./gradlew buildPlugin`
 
-Expected: PASS and no missing resource errors.
+预期：PASS，且没有资源缺失错误。
 
-## Task 5: Final Verification
+## 任务 5：最终验证
 
-**Files:**
-- All changed files.
+**文件：**
+- 所有变更文件。
 
-- [ ] **Step 1: Run focused tests**
+- [ ] **步骤 1：运行聚焦测试**
 
-Run: `./gradlew test --tests dev.diffguard.toolwindow.*`
+运行：`./gradlew test --tests dev.diffguard.toolwindow.*`
 
-Expected: PASS.
+预期：PASS。
 
-- [ ] **Step 2: Run full verification**
+- [ ] **步骤 2：运行完整验证**
 
-Run: `./gradlew test buildPlugin`
+运行：`./gradlew test buildPlugin`
 
-Expected: PASS.
+预期：PASS。
 
-- [ ] **Step 3: Review changed files**
+- [ ] **步骤 3：检查变更文件**
 
-Run: `git diff -- src/main/kotlin/dev/diffguard/toolwindow src/main/resources/META-INF/plugin.xml src/main/resources/icons src/test/kotlin/dev/diffguard/toolwindow`
+运行：`git diff -- src/main/kotlin/dev/diffguard/toolwindow src/main/resources/META-INF/plugin.xml src/main/resources/icons src/test/kotlin/dev/diffguard/toolwindow`
 
-Expected: changes match the design, with no unrelated edits.
+预期：变更与设计一致，且没有无关编辑。

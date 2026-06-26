@@ -1,12 +1,12 @@
 # AI Review 原生结果页 UI 实现计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **给 agentic workers：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 按任务逐步执行本计划。步骤使用 checkbox（`- [ ]`）语法跟踪。
 
-**Goal:** 将 AI Review 结果页从 `JEditorPane + HTML` 主展示层迁移为 IntelliJ IDEA 原生 Swing 组件面板。
+**目标：** 将 AI Review 结果页从 `JEditorPane + HTML` 主展示层迁移为 IntelliJ IDEA 原生 Swing 组件面板。
 
-**Architecture:** 新增 `AIReviewResultPanelRenderer`，把 status 和 `List<ReviewFinding>` 渲染为普通 Swing `JComponent`。`AIReviewToolWindowView` 只负责持有 `JBScrollPane`、替换当前内容并滚动到顶部，结构化 JSON 解析链路和 `ReviewFinding` 模型保持不变。
+**架构：** 新增 `AIReviewResultPanelRenderer`，把 status 和 `List<ReviewFinding>` 渲染为普通 Swing `JComponent`。`AIReviewToolWindowView` 只负责持有 `JBScrollPane`、替换当前内容并滚动到顶部，结构化 JSON 解析链路和 `ReviewFinding` 模型保持不变。
 
-**Tech Stack:** Kotlin、IntelliJ Platform Swing (`JBScrollPane`, `JBLabel`, `JBTextArea`, `JBUI`, `UIUtil`)、JUnit 5、Gradle、Corretto 17。
+**技术栈：** Kotlin、IntelliJ Platform Swing (`JBScrollPane`, `JBLabel`, `JBTextArea`, `JBUI`, `UIUtil`)、JUnit 5、Gradle、Corretto 17。
 
 ---
 
@@ -24,32 +24,32 @@
 
 ## 文件结构
 
-- Create: `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`
+- 创建：`src/main/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`
   - 负责把 status 和 findings 渲染为原生 Swing 组件。
   - 内部包含 summary card、badge、finding card、排序和统计逻辑。
-- Create: `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`
+- 创建：`src/test/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`
   - 验证 renderer 的可见文本、空结果、统计、排序、普通文本安全边界。
-- Modify: `src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
+- 修改：`src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
   - 移除 `JEditorPane` 和 `AIReviewResultHtmlRenderer` 主展示依赖。
   - 使用 `AIReviewResultPanelRenderer` + `JBScrollPane` + 内容容器替换展示内容。
-- Modify: `src/test/kotlin/com/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`
+- 修改：`src/test/kotlin/com/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`
   - 更新为原生组件结构测试。
   - 验证没有 `JBTable`，也没有 `JEditorPane` 作为主展示组件。
   - 验证每次 `showStatus` / `showFindings` 会替换旧内容。
-- Delete: `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt`
+- 删除：`src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt`
   - 原 HTML renderer 不再被 ToolWindow 使用，删除避免保留废弃展示路径。
-- Delete: `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt`
+- 删除：`src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt`
   - 对应旧 HTML renderer 的测试随旧实现删除。
 
 ---
 
-### Task 1: 新增原生 renderer 行为测试和实现
+### 任务 1：新增原生 renderer 行为测试和实现
 
-**Files:**
-- Create: `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`
-- Create: `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`
+**文件：**
+- 创建：`src/test/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`
+- 创建：`src/main/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`
 
-- [ ] **Step 1: 写失败测试**
+- [ ] **步骤 1：写失败测试**
 
 创建 `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRendererTest.kt`：
 
@@ -180,17 +180,17 @@ class AIReviewResultPanelRendererTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认红灯**
+- [ ] **步骤 2：运行测试确认红灯**
 
-Run:
+运行：
 
 ```bash
 JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewResultPanelRendererTest"
 ```
 
-Expected: FAIL，原因是 `Unresolved reference 'AIReviewResultPanelRenderer'`。
+预期：FAIL，原因是 `Unresolved reference 'AIReviewResultPanelRenderer'`。
 
-- [ ] **Step 3: 写最小原生 renderer 实现**
+- [ ] **步骤 3：写最小原生 renderer 实现**
 
 创建 `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultPanelRenderer.kt`：
 
@@ -400,25 +400,25 @@ internal class AIReviewResultPanelRenderer {
 }
 ```
 
-- [ ] **Step 4: 运行 renderer 测试确认绿灯**
+- [ ] **步骤 4：运行 renderer 测试确认绿灯**
 
-Run:
+运行：
 
 ```bash
 JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewResultPanelRendererTest"
 ```
 
-Expected: PASS，`AIReviewResultPanelRendererTest` 全部通过。
+预期：PASS，`AIReviewResultPanelRendererTest` 全部通过。
 
 ---
 
-### Task 2: 改造 ToolWindow View 为原生结果容器
+### 任务 2：改造 ToolWindow View 为原生结果容器
 
-**Files:**
-- Modify: `src/test/kotlin/com/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`
-- Modify: `src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
+**文件：**
+- 修改：`src/test/kotlin/com/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`
+- 修改：`src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
 
-- [ ] **Step 1: 写失败测试替换旧 View 断言**
+- [ ] **步骤 1：写失败测试替换旧 View 断言**
 
 用以下内容替换 `src/test/kotlin/com/diffguard/toolwindow/AIReviewToolWindowViewTest.kt`：
 
@@ -529,17 +529,17 @@ class AIReviewToolWindowViewTest {
 }
 ```
 
-- [ ] **Step 2: 运行 View 测试确认红灯**
+- [ ] **步骤 2：运行 View 测试确认红灯**
 
-Run:
+运行：
 
 ```bash
 JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewToolWindowViewTest"
 ```
 
-Expected: FAIL，当前实现仍包含 `JEditorPane`，且 `showStatus` / `showFindings` 通过 HTML 文档展示。
+预期：FAIL，当前实现仍包含 `JEditorPane`，且 `showStatus` / `showFindings` 通过 HTML 文档展示。
 
-- [ ] **Step 3: 改造 ToolWindow View 实现**
+- [ ] **步骤 3：改造 ToolWindow View 实现**
 
 用以下内容替换 `src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`：
 
@@ -622,107 +622,107 @@ class AIReviewToolWindowService {
 }
 ```
 
-- [ ] **Step 4: 运行 View 测试确认绿灯**
+- [ ] **步骤 4：运行 View 测试确认绿灯**
 
-Run:
+运行：
 
 ```bash
 JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewToolWindowViewTest"
 ```
 
-Expected: PASS，`AIReviewToolWindowViewTest` 全部通过。
+预期：PASS，`AIReviewToolWindowViewTest` 全部通过。
 
-- [ ] **Step 5: 运行 renderer + view 组合测试**
+- [ ] **步骤 5：运行 renderer + view 组合测试**
 
-Run:
+运行：
 
 ```bash
 JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.AIReviewResultPanelRendererTest" --tests "dev.diffguard.toolwindow.AIReviewToolWindowViewTest"
 ```
 
-Expected: PASS，两组 ToolWindow UI 测试全部通过。
+预期：PASS，两组 ToolWindow UI 测试全部通过。
 
 ---
 
-### Task 3: 删除旧 HTML renderer 展示路径
+### 任务 3：删除旧 HTML renderer 展示路径
 
-**Files:**
-- Delete: `src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt`
-- Delete: `src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt`
+**文件：**
+- 删除：`src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt`
+- 删除：`src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt`
 
-- [ ] **Step 1: 确认旧 renderer 只剩自身和测试引用**
+- [ ] **步骤 1：确认旧 renderer 只剩自身和测试引用**
 
-Run:
+运行：
 
 ```bash
 git -C "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" grep -n "AIReviewResultHtmlRenderer"
 ```
 
-Expected: 只看到以下两个文件的引用：
+预期：只看到以下两个文件的引用：
 
 ```text
 src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt
 src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt
 ```
 
-- [ ] **Step 2: 删除旧 HTML renderer 和测试**
+- [ ] **步骤 2：删除旧 HTML renderer 和测试**
 
-Run:
+运行：
 
 ```bash
 rm "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui/src/main/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRenderer.kt" "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui/src/test/kotlin/com/diffguard/toolwindow/AIReviewResultHtmlRendererTest.kt"
 ```
 
-Expected: 两个旧 HTML renderer 文件被删除。
+预期：两个旧 HTML renderer 文件被删除。
 
-- [ ] **Step 3: 运行 ToolWindow 包测试确认没有遗留引用**
+- [ ] **步骤 3：运行 ToolWindow 包测试确认没有遗留引用**
 
-Run:
+运行：
 
 ```bash
 JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test --tests "dev.diffguard.toolwindow.*"
 ```
 
-Expected: PASS，`toolwindow` 包测试全部通过。
+预期：PASS，`toolwindow` 包测试全部通过。
 
 ---
 
-### Task 4: 全量验证和手动 UI 验收
+### 任务 4：全量验证和手动 UI 验收
 
-**Files:**
+**文件：**
 - Verify only: no source files should be edited in this task unless verification reveals a failure.
 
-- [ ] **Step 1: 运行完整测试套件**
+- [ ] **步骤 1：运行完整测试套件**
 
-Run:
+运行：
 
 ```bash
 JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" test
 ```
 
-Expected: PASS。若出现既有 IntelliJ bundled plugin descriptor 警告但测试 exit code 为 0，可记录为非阻塞环境警告，不在本任务修复。
+预期：PASS。若出现既有 IntelliJ bundled plugin descriptor 警告但测试 exit code 为 0，可记录为非阻塞环境警告，不在本任务修复。
 
-- [ ] **Step 2: 构建插件包**
+- [ ] **步骤 2：构建插件包**
 
-Run:
+运行：
 
 ```bash
 JAVA_HOME="/Users/forest/Library/Java/JavaVirtualMachines/corretto-17.0.15/Contents/Home" gradle -p "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" buildPlugin
 ```
 
-Expected: PASS，插件包构建成功。
+预期：PASS，插件包构建成功。
 
-- [ ] **Step 3: 检查迁移后代码不再依赖 `JEditorPane` 展示结果**
+- [ ] **步骤 3：检查迁移后代码不再依赖 `JEditorPane` 展示结果**
 
-Run:
+运行：
 
 ```bash
 git -C "/Users/forest/Work/Ai/DiffGuard/.worktrees/ai-review-markdown-result-ui" grep -n "JEditorPane\|AIReviewResultHtmlRenderer" -- src/main src/test
 ```
 
-Expected: 没有 `AIReviewResultHtmlRenderer` 引用；`JEditorPane` 只允许出现在测试断言“组件树中不存在 JEditorPane”的 import / type check 中，不允许出现在生产代码中。
+预期：没有 `AIReviewResultHtmlRenderer` 引用；`JEditorPane` 只允许出现在测试断言“组件树中不存在 JEditorPane”的 import / type check 中，不允许出现在生产代码中。
 
-- [ ] **Step 4: 手动 UI 验收**
+- [ ] **步骤 4：手动 UI 验收**
 
 在 IDE sandbox 中触发一次 AI Review，验收以下内容：
 

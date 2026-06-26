@@ -1,12 +1,12 @@
-# DiffGuard MVP Implementation Plan
+# DiffGuard MVP 实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **给 agentic workers：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 按任务逐步执行本计划。步骤使用 checkbox（`- [ ]`）语法跟踪。
 
-**Goal:** 构建一个 IntelliJ IDEA 2024+ 插件 MVP，在用户提交前获取 staged diff，调用 OpenAI Compatible API 进行 AI Code Review，并在 ToolWindow 中展示结果。
+**目标：** 构建一个 IntelliJ IDEA 2024+ 插件 MVP，在用户提交前获取 staged diff，调用 OpenAI Compatible API 进行 AI Code Review，并在 ToolWindow 中展示结果。
 
-**Architecture:** 插件采用小型分层结构：`action` 负责入口编排，`git` 负责通过 IntelliJ Git API 获取 staged diff，`review` 负责 Prompt 与解析，`ai` 负责 OpenAI Compatible 调用，`toolwindow` 负责 Swing 展示，`settings` 负责全局配置。实现保持 MVP：无自动修复、无 Agent、无数据库、无复杂框架。
+**架构：** 插件采用小型分层结构：`action` 负责入口编排，`git` 负责通过 IntelliJ Git API 获取 staged diff，`review` 负责 Prompt 与解析，`ai` 负责 OpenAI Compatible 调用，`toolwindow` 负责 Swing 展示，`settings` 负责全局配置。实现保持 MVP：无自动修复、无 Agent、无数据库、无复杂框架。
 
-**Tech Stack:** IntelliJ Platform SDK、Kotlin、Gradle Kotlin DSL、Swing、OkHttp、kotlinx.serialization、JUnit 5、Java 17。
+**技术栈：** IntelliJ Platform SDK、Kotlin、Gradle Kotlin DSL、Swing、OkHttp、kotlinx.serialization、JUnit 5、Java 17。
 
 ---
 
@@ -58,14 +58,14 @@ DiffGuard/
 
 ---
 
-### Task 1: 初始化 Gradle IntelliJ 插件项目
+### 任务 1：初始化 Gradle IntelliJ 插件项目
 
-**Files:**
-- Create: `settings.gradle.kts`
-- Create: `gradle.properties`
-- Create: `build.gradle.kts`
+**文件：**
+- 创建：`settings.gradle.kts`
+- 创建：`gradle.properties`
+- 创建：`build.gradle.kts`
 
-- [ ] **Step 1: 创建 `settings.gradle.kts`**
+- [ ] **步骤 1：创建 `settings.gradle.kts`**
 
 ```kotlin
 pluginManagement {
@@ -91,7 +91,7 @@ dependencyResolutionManagement {
 rootProject.name = "DiffGuard"
 ```
 
-- [ ] **Step 2: 创建 `gradle.properties`**
+- [ ] **步骤 2：创建 `gradle.properties`**
 
 ```properties
 kotlin.code.style=official
@@ -105,7 +105,7 @@ platformType=IC
 platformVersion=2024.1
 ```
 
-- [ ] **Step 3: 创建 `build.gradle.kts`**
+- [ ] **步骤 3：创建 `build.gradle.kts`**
 
 ```kotlin
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
@@ -176,13 +176,13 @@ tasks {
 }
 ```
 
-- [ ] **Step 4: 验证 Gradle 项目可识别**
+- [ ] **步骤 4：验证 Gradle 项目可识别**
 
-Run: `./gradlew tasks`
+运行：`./gradlew tasks`
 
-Expected: 输出 Gradle task 列表，包含 `runIde`、`buildPlugin`、`test`。
+预期：输出 Gradle task 列表，包含 `runIde`、`buildPlugin`、`test`。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 当前目录不是 git 仓库时跳过 commit；如果已初始化 git，则执行：
 
@@ -193,14 +193,14 @@ git commit -m "chore: initialize IntelliJ plugin project"
 
 ---
 
-### Task 2: 添加核心模型与解析测试
+### 任务 2：添加核心模型与解析测试
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/model/ReviewFinding.kt`
-- Create: `src/main/kotlin/com/diffguard/review/ReviewResultParser.kt`
-- Create: `src/test/kotlin/com/diffguard/review/ReviewResultParserTest.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/model/ReviewFinding.kt`
+- 创建：`src/main/kotlin/com/diffguard/review/ReviewResultParser.kt`
+- 创建：`src/test/kotlin/com/diffguard/review/ReviewResultParserTest.kt`
 
-- [ ] **Step 1: 先写失败测试 `ReviewResultParserTest.kt`**
+- [ ] **步骤 1：先写失败测试 `ReviewResultParserTest.kt`**
 
 ```kotlin
 package dev.diffguard.review
@@ -270,13 +270,13 @@ class ReviewResultParserTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [ ] **步骤 2：运行测试确认失败**
 
-Run: `./gradlew test --tests "dev.diffguard.review.ReviewResultParserTest"`
+运行：`./gradlew test --tests "dev.diffguard.review.ReviewResultParserTest"`
 
-Expected: FAIL，原因是 `ReviewResultParser` 和 `ReviewFinding` 尚不存在。
+预期：FAIL，原因是 `ReviewResultParser` 和 `ReviewFinding` 尚不存在。
 
-- [ ] **Step 3: 创建 `ReviewFinding.kt`**
+- [ ] **步骤 3：创建 `ReviewFinding.kt`**
 
 ```kotlin
 package dev.diffguard.model
@@ -292,7 +292,7 @@ data class ReviewFinding(
 )
 ```
 
-- [ ] **Step 4: 创建 `ReviewResultParser.kt`**
+- [ ] **步骤 4：创建 `ReviewResultParser.kt`**
 
 ```kotlin
 package dev.diffguard.review
@@ -344,13 +344,13 @@ class ReviewResultParser {
 }
 ```
 
-- [ ] **Step 5: 运行测试确认通过**
+- [ ] **步骤 5：运行测试确认通过**
 
-Run: `./gradlew test --tests "dev.diffguard.review.ReviewResultParserTest"`
+运行：`./gradlew test --tests "dev.diffguard.review.ReviewResultParserTest"`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 6: Commit**
+- [ ] **步骤 6：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/model/ReviewFinding.kt src/main/kotlin/com/diffguard/review/ReviewResultParser.kt src/test/kotlin/com/diffguard/review/ReviewResultParserTest.kt
@@ -361,13 +361,13 @@ git commit -m "test: add review result parser"
 
 ---
 
-### Task 3: 添加 Prompt Builder 与测试
+### 任务 3：添加 Prompt Builder 与测试
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/review/ReviewPromptBuilder.kt`
-- Create: `src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/review/ReviewPromptBuilder.kt`
+- 创建：`src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt`
 
-- [ ] **Step 1: 先写失败测试 `ReviewPromptBuilderTest.kt`**
+- [ ] **步骤 1：先写失败测试 `ReviewPromptBuilderTest.kt`**
 
 ```kotlin
 package dev.diffguard.review
@@ -396,13 +396,13 @@ class ReviewPromptBuilderTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [ ] **步骤 2：运行测试确认失败**
 
-Run: `./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
+运行：`./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
 
-Expected: FAIL，原因是 `ReviewPromptBuilder` 尚不存在。
+预期：FAIL，原因是 `ReviewPromptBuilder` 尚不存在。
 
-- [ ] **Step 3: 创建 `ReviewPromptBuilder.kt`**
+- [ ] **步骤 3：创建 `ReviewPromptBuilder.kt`**
 
 ```kotlin
 package dev.diffguard.review
@@ -444,13 +444,13 @@ class ReviewPromptBuilder {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [ ] **步骤 4：运行测试确认通过**
 
-Run: `./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
+运行：`./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/review/ReviewPromptBuilder.kt src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt
@@ -461,14 +461,14 @@ git commit -m "test: add review prompt builder"
 
 ---
 
-### Task 4: 添加 OpenAI DTO、Provider 接口与 OpenAIProvider
+### 任务 4：添加 OpenAI DTO、Provider 接口与 OpenAIProvider
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/ai/AIProvider.kt`
-- Create: `src/main/kotlin/com/diffguard/model/OpenAIModels.kt`
-- Create: `src/main/kotlin/com/diffguard/ai/OpenAIProvider.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/ai/AIProvider.kt`
+- 创建：`src/main/kotlin/com/diffguard/model/OpenAIModels.kt`
+- 创建：`src/main/kotlin/com/diffguard/ai/OpenAIProvider.kt`
 
-- [ ] **Step 1: 创建 `AIProvider.kt`**
+- [ ] **步骤 1：创建 `AIProvider.kt`**
 
 ```kotlin
 package dev.diffguard.ai
@@ -478,7 +478,7 @@ interface AIProvider {
 }
 ```
 
-- [ ] **Step 2: 创建 `OpenAIModels.kt`**
+- [ ] **步骤 2：创建 `OpenAIModels.kt`**
 
 ```kotlin
 package dev.diffguard.model
@@ -523,7 +523,7 @@ data class OpenAIErrorDetail(
 )
 ```
 
-- [ ] **Step 3: 创建 `OpenAIProvider.kt`**
+- [ ] **步骤 3：创建 `OpenAIProvider.kt`**
 
 ```kotlin
 package dev.diffguard.ai
@@ -589,13 +589,13 @@ class OpenAIProvider(
 }
 ```
 
-- [ ] **Step 4: 运行编译检查**
+- [ ] **步骤 4：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/ai/AIProvider.kt src/main/kotlin/com/diffguard/model/OpenAIModels.kt src/main/kotlin/com/diffguard/ai/OpenAIProvider.kt
@@ -606,15 +606,15 @@ git commit -m "feat: add OpenAI compatible provider"
 
 ---
 
-### Task 5: 添加全局 Settings 配置
+### 任务 5：添加全局 Settings 配置
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/model/AISettingsState.kt`
-- Create: `src/main/kotlin/com/diffguard/settings/AIReviewSettingsService.kt`
-- Create: `src/main/kotlin/com/diffguard/settings/AIReviewSettingsComponent.kt`
-- Create: `src/main/kotlin/com/diffguard/settings/AIReviewConfigurable.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/model/AISettingsState.kt`
+- 创建：`src/main/kotlin/com/diffguard/settings/AIReviewSettingsService.kt`
+- 创建：`src/main/kotlin/com/diffguard/settings/AIReviewSettingsComponent.kt`
+- 创建：`src/main/kotlin/com/diffguard/settings/AIReviewConfigurable.kt`
 
-- [ ] **Step 1: 创建 `AISettingsState.kt`**
+- [ ] **步骤 1：创建 `AISettingsState.kt`**
 
 ```kotlin
 package dev.diffguard.model
@@ -626,7 +626,7 @@ data class AISettingsState(
 )
 ```
 
-- [ ] **Step 2: 创建 `AIReviewSettingsService.kt`**
+- [ ] **步骤 2：创建 `AIReviewSettingsService.kt`**
 
 ```kotlin
 package dev.diffguard.settings
@@ -659,7 +659,7 @@ class AIReviewSettingsService : PersistentStateComponent<AISettingsState> {
 }
 ```
 
-- [ ] **Step 3: 创建 `AIReviewSettingsComponent.kt`**
+- [ ] **步骤 3：创建 `AIReviewSettingsComponent.kt`**
 
 ```kotlin
 package dev.diffguard.settings
@@ -700,7 +700,7 @@ class AIReviewSettingsComponent {
 }
 ```
 
-- [ ] **Step 4: 创建 `AIReviewConfigurable.kt`**
+- [ ] **步骤 4：创建 `AIReviewConfigurable.kt`**
 
 ```kotlin
 package dev.diffguard.settings
@@ -735,13 +735,13 @@ class AIReviewConfigurable : Configurable {
 }
 ```
 
-- [ ] **Step 5: 运行编译检查**
+- [ ] **步骤 5：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 6: Commit**
+- [ ] **步骤 6：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/model/AISettingsState.kt src/main/kotlin/com/diffguard/settings/AIReviewSettingsService.kt src/main/kotlin/com/diffguard/settings/AIReviewSettingsComponent.kt src/main/kotlin/com/diffguard/settings/AIReviewConfigurable.kt
@@ -752,12 +752,12 @@ git commit -m "feat: add global AI review settings"
 
 ---
 
-### Task 6: 添加 ToolWindow UI
+### 任务 6：添加 ToolWindow UI
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt`
 
-- [ ] **Step 1: 创建 `AIReviewToolWindowFactory.kt`**
+- [ ] **步骤 1：创建 `AIReviewToolWindowFactory.kt`**
 
 ```kotlin
 package dev.diffguard.toolwindow
@@ -851,13 +851,13 @@ class AIReviewToolWindowService(private val project: Project) {
 }
 ```
 
-- [ ] **Step 2: 运行编译检查**
+- [ ] **步骤 2：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 3: Commit**
+- [ ] **步骤 3：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/toolwindow/AIReviewToolWindowFactory.kt
@@ -868,12 +868,12 @@ git commit -m "feat: add AI review tool window"
 
 ---
 
-### Task 7: 添加 staged diff 获取实现
+### 任务 7：添加 staged diff 获取实现
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/git/GitStagedDiffProvider.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/git/GitStagedDiffProvider.kt`
 
-- [ ] **Step 1: 创建 `GitStagedDiffProvider.kt`**
+- [ ] **步骤 1：创建 `GitStagedDiffProvider.kt`**
 
 ```kotlin
 package dev.diffguard.git
@@ -908,13 +908,13 @@ class GitStagedDiffProvider {
 
 说明：这里使用 IntelliJ Git4Idea API（`GitLineHandler` + `Git.getInstance().runCommand`）执行 Git diff 操作，没有通过 shell 执行 `git` 命令，满足“不通过 shell 执行 git 命令”的约束。
 
-- [ ] **Step 2: 运行编译检查**
+- [ ] **步骤 2：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。若 Git4Idea API 在当前 platform 版本中方法名有差异，按编译错误只调整同一 IntelliJ Git API 范围内的调用，不改为 shell。
+预期：PASS。若 Git4Idea API 在当前 platform 版本中方法名有差异，按编译错误只调整同一 IntelliJ Git API 范围内的调用，不改为 shell。
 
-- [ ] **Step 3: Commit**
+- [ ] **步骤 3：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/git/GitStagedDiffProvider.kt
@@ -925,12 +925,12 @@ git commit -m "feat: add staged diff provider"
 
 ---
 
-### Task 8: 添加 Review 编排服务
+### 任务 8：添加 Review 编排服务
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/review/ReviewOrchestrator.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/review/ReviewOrchestrator.kt`
 
-- [ ] **Step 1: 创建 `ReviewOrchestrator.kt`**
+- [ ] **步骤 1：创建 `ReviewOrchestrator.kt`**
 
 ```kotlin
 package dev.diffguard.review
@@ -975,13 +975,13 @@ sealed class ReviewResult {
 }
 ```
 
-- [ ] **Step 2: 运行编译检查**
+- [ ] **步骤 2：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 3: Commit**
+- [ ] **步骤 3：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/review/ReviewOrchestrator.kt
@@ -992,12 +992,12 @@ git commit -m "feat: add review orchestration"
 
 ---
 
-### Task 9: 添加 Action 入口
+### 任务 9：添加 Action 入口
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/action/AIReviewAction.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/action/AIReviewAction.kt`
 
-- [ ] **Step 1: 创建 `AIReviewAction.kt`**
+- [ ] **步骤 1：创建 `AIReviewAction.kt`**
 
 ```kotlin
 package dev.diffguard.action
@@ -1044,7 +1044,7 @@ class AIReviewAction : AnAction("AI Review") {
 }
 ```
 
-- [ ] **Step 2: 移除未使用 import**
+- [ ] **步骤 2：移除未使用 import**
 
 如果 IDE 或 `compileKotlin` 报告 `ApplicationManager` 未使用，删除这一行：
 
@@ -1052,13 +1052,13 @@ class AIReviewAction : AnAction("AI Review") {
 import com.intellij.openapi.application.ApplicationManager
 ```
 
-- [ ] **Step 3: 运行编译检查**
+- [ ] **步骤 3：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 4: Commit**
+- [ ] **步骤 4：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/action/AIReviewAction.kt
@@ -1069,12 +1069,12 @@ git commit -m "feat: add AI review action"
 
 ---
 
-### Task 10: 注册 plugin.xml
+### 任务 10：注册 plugin.xml
 
-**Files:**
-- Create: `src/main/resources/META-INF/plugin.xml`
+**文件：**
+- 创建：`src/main/resources/META-INF/plugin.xml`
 
-- [ ] **Step 1: 创建 `plugin.xml`**
+- [ ] **步骤 1：创建 `plugin.xml`**
 
 ```xml
 <idea-plugin>
@@ -1117,13 +1117,13 @@ git commit -m "feat: add AI review action"
 
 说明：`Vcs.Group.Commit` 用于尽量靠近 Commit 工作流；`ChangesViewPopupMenu` 与 `VcsGroup` 作为 MVP 稳定入口补充。若某个 group 在目标 IDE 版本不可用，Action 仍可通过其他 group 使用。
 
-- [ ] **Step 2: 运行插件 XML 与编译检查**
+- [ ] **步骤 2：运行插件 XML 与编译检查**
 
-Run: `./gradlew buildPlugin`
+运行：`./gradlew buildPlugin`
 
-Expected: PASS，并在 `build/distributions/` 生成插件 zip。
+预期：PASS，并在 `build/distributions/` 生成插件 zip。
 
-- [ ] **Step 3: Commit**
+- [ ] **步骤 3：提交**
 
 ```bash
 git add src/main/resources/META-INF/plugin.xml
@@ -1134,12 +1134,12 @@ git commit -m "feat: register plugin extensions and action"
 
 ---
 
-### Task 11: 添加中文 README
+### 任务 11：添加中文 README
 
-**Files:**
-- Create: `README.md`
+**文件：**
+- 创建：`README.md`
 
-- [ ] **Step 1: 创建 `README.md`**
+- [ ] **步骤 1：创建 `README.md`**
 
 ```markdown
 # DiffGuard
@@ -1246,13 +1246,13 @@ Settings / Tools / DiffGuard
 - API 错误会展示在 ToolWindow 状态栏。
 ```
 
-- [ ] **Step 2: 验证 README 存在**
+- [ ] **步骤 2：验证 README 存在**
 
-Run: `./gradlew test`
+运行：`./gradlew test`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 3: Commit**
+- [ ] **步骤 3：提交**
 
 ```bash
 git add README.md
@@ -1263,30 +1263,30 @@ git commit -m "docs: add Chinese README"
 
 ---
 
-### Task 12: 最终验证与修正
+### 任务 12：最终验证与修正
 
-**Files:**
-- Modify only files that fail compile/test verification.
+**文件：**
+- 仅修改编译或测试验证失败所需的文件。
 
-- [ ] **Step 1: 运行完整测试**
+- [ ] **步骤 1：运行完整测试**
 
-Run: `./gradlew test`
+运行：`./gradlew test`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 2: 构建插件**
+- [ ] **步骤 2：构建插件**
 
-Run: `./gradlew buildPlugin`
+运行：`./gradlew buildPlugin`
 
-Expected: PASS，生成 `build/distributions/DiffGuard-0.1.0.zip` 或同版本 zip。
+预期：PASS，生成 `build/distributions/DiffGuard-0.1.0.zip` 或同版本 zip。
 
-- [ ] **Step 3: 启动 IDE 沙箱**
+- [ ] **步骤 3：启动 IDE 沙箱**
 
-Run: `./gradlew runIde`
+运行：`./gradlew runIde`
 
-Expected: IntelliJ IDEA 沙箱启动，插件已加载。
+预期：IntelliJ IDEA 沙箱启动，插件已加载。
 
-- [ ] **Step 4: 手动检查 Settings**
+- [ ] **步骤 4：手动检查 Settings**
 
 在沙箱 IDE 中打开：
 
@@ -1294,23 +1294,23 @@ Expected: IntelliJ IDEA 沙箱启动，插件已加载。
 Settings / Tools / DiffGuard
 ```
 
-Expected:
+预期：
 
 - 可以看到 `Base URL`、`API Key`、`Model` 三个字段。
 - 点击 Apply 后配置可保存。
 
-- [ ] **Step 5: 手动检查 ToolWindow**
+- [ ] **步骤 5：手动检查 ToolWindow**
 
 在沙箱 IDE 中打开任意 Git 项目并 staged 一个文件后，点击 `Review with DiffGuard`。
 
-Expected:
+预期：
 
 - 底部出现 `DiffGuard` ToolWindow。
 - 无 staged changes 时显示 `No staged changes to review.`。
 - 未配置 API Key 时显示配置提示。
 - 配置 API 后能展示 findings 或 `No issues found.`。
 
-- [ ] **Step 6: 最终 Commit**
+- [ ] **步骤 6：最终提交**
 
 ```bash
 git add build.gradle.kts gradle.properties settings.gradle.kts README.md src docs

@@ -1,12 +1,12 @@
-# PSI Context Builder Implementation Plan
+# PSI Context Builder 实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **给 agentic workers：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 按任务逐步执行本计划。步骤使用 checkbox（`- [ ]`）语法跟踪。
 
-**Goal:** 实现 PSI Context Builder，让 AI Review 基于 IntelliJ PSI 的代码语义上下文进行分析，而非仅基于 diff 文本。
+**目标：** 实现 PSI Context Builder，让 AI Review 基于 IntelliJ PSI 的代码语义上下文进行分析，而非仅基于 diff 文本。
 
-**Architecture:** 新增 `context`、`psi`、`analyzer` 三个包。`CodeContextBuilder` 串联 diff 解析和 PSI 分析，生成结构化 `CodeContext` 列表。`ReviewPromptBuilder` 替换为新 Prompt 结构，将 PSI Context 注入 AI 请求。
+**架构：** 新增 `context`、`psi`、`analyzer` 三个包。`CodeContextBuilder` 串联 diff 解析和 PSI 分析，生成结构化 `CodeContext` 列表。`ReviewPromptBuilder` 替换为新 Prompt 结构，将 PSI Context 注入 AI 请求。
 
-**Tech Stack:** IntelliJ Platform SDK、Kotlin、PSI API（PsiJavaFile、PsiClass、PsiMethod、JavaRecursiveElementVisitor）、JUnit 5、IntelliJ Platform Test Framework。
+**技术栈：** IntelliJ Platform SDK、Kotlin、PSI API（PsiJavaFile、PsiClass、PsiMethod、JavaRecursiveElementVisitor）、JUnit 5、IntelliJ Platform Test Framework。
 
 ---
 
@@ -56,13 +56,13 @@ src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt
 
 ---
 
-### Task 1: 创建数据模型
+### 任务 1：创建数据模型
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/context/CodeContext.kt`
-- Create: `src/main/kotlin/com/diffguard/context/MethodContext.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/context/CodeContext.kt`
+- 创建：`src/main/kotlin/com/diffguard/context/MethodContext.kt`
 
-- [ ] **Step 1: 创建 `MethodContext.kt`**
+- [ ] **步骤 1：创建 `MethodContext.kt`**
 
 ```kotlin
 package dev.diffguard.context
@@ -105,7 +105,7 @@ data class MethodContext(
 )
 ```
 
-- [ ] **Step 2: 创建 `CodeContext.kt`**
+- [ ] **步骤 2：创建 `CodeContext.kt`**
 
 ```kotlin
 package dev.diffguard.context
@@ -161,13 +161,13 @@ data class CodeContext(
 )
 ```
 
-- [ ] **Step 3: 运行编译检查**
+- [ ] **步骤 3：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 4: Commit**
+- [ ] **步骤 4：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/context/CodeContext.kt src/main/kotlin/com/diffguard/context/MethodContext.kt
@@ -176,13 +176,13 @@ git commit -m "feat: add PSI context data models"
 
 ---
 
-### Task 2: 实现 Diff 解析器（纯文本，无 PSI 依赖）
+### 任务 2：实现 Diff 解析器（纯文本，无 PSI 依赖）
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/context/CodeContextBuilder.kt`
-- Create: `src/test/kotlin/com/diffguard/context/CodeContextBuilderTest.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/context/CodeContextBuilder.kt`
+- 创建：`src/test/kotlin/com/diffguard/context/CodeContextBuilderTest.kt`
 
-- [ ] **Step 1: 先写失败测试 `CodeContextBuilderTest.kt`**
+- [ ] **步骤 1：先写失败测试 `CodeContextBuilderTest.kt`**
 
 ```kotlin
 package dev.diffguard.context
@@ -319,13 +319,13 @@ class CodeContextBuilderTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [ ] **步骤 2：运行测试确认失败**
 
-Run: `./gradlew test --tests "dev.diffguard.context.CodeContextBuilderTest"`
+运行：`./gradlew test --tests "dev.diffguard.context.CodeContextBuilderTest"`
 
-Expected: FAIL，原因是 `DiffParser` 尚不存在。
+预期：FAIL，原因是 `DiffParser` 尚不存在。
 
-- [ ] **Step 3: 创建 `DiffParser`（内置于 CodeContextBuilder.kt 中）**
+- [ ] **步骤 3：创建 `DiffParser`（内置于 CodeContextBuilder.kt 中）**
 
 ```kotlin
 package dev.diffguard.context
@@ -404,7 +404,7 @@ object DiffParser {
 
 /**
  * Code Context 构建器
- * 当前仅包含 diff 解析功能，PSI 分析将在后续 Task 中集成
+ * 当前仅包含 diff 解析功能，PSI 分析将在后续任务中集成
  */
 class CodeContextBuilder(private val project: Project) {
 
@@ -415,19 +415,19 @@ class CodeContextBuilder(private val project: Project) {
         val fileLineMap = DiffParser.parse(diff)
         if (fileLineMap.isEmpty()) return emptyList()
 
-        // PSI 分析将在后续 Task 中实现
+        // PSI 分析将在后续任务中实现
         return emptyList()
     }
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [ ] **步骤 4：运行测试确认通过**
 
-Run: `./gradlew test --tests "dev.diffguard.context.CodeContextBuilderTest"`
+运行：`./gradlew test --tests "dev.diffguard.context.CodeContextBuilderTest"`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/context/CodeContextBuilder.kt src/test/kotlin/com/diffguard/context/CodeContextBuilderTest.kt
@@ -436,13 +436,13 @@ git commit -m "feat: add diff parser for extracting modified line numbers"
 
 ---
 
-### Task 3: 实现 Spring 语义分析器
+### 任务 3：实现 Spring 语义分析器
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/analyzer/SpringSemanticAnalyzer.kt`
-- Create: `src/test/kotlin/com/diffguard/analyzer/SpringSemanticAnalyzerTest.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/analyzer/SpringSemanticAnalyzer.kt`
+- 创建：`src/test/kotlin/com/diffguard/analyzer/SpringSemanticAnalyzerTest.kt`
 
-- [ ] **Step 1: 先写失败测试 `SpringSemanticAnalyzerTest.kt`**
+- [ ] **步骤 1：先写失败测试 `SpringSemanticAnalyzerTest.kt`**
 
 ```kotlin
 package dev.diffguard.analyzer
@@ -589,13 +589,13 @@ class SpringSemanticAnalyzerTest : BasePlatformTestCase() {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [ ] **步骤 2：运行测试确认失败**
 
-Run: `./gradlew test --tests "dev.diffguard.analyzer.SpringSemanticAnalyzerTest"`
+运行：`./gradlew test --tests "dev.diffguard.analyzer.SpringSemanticAnalyzerTest"`
 
-Expected: FAIL，原因是 `SpringSemanticAnalyzer` 尚不存在。
+预期：FAIL，原因是 `SpringSemanticAnalyzer` 尚不存在。
 
-- [ ] **Step 3: 创建 `SpringSemanticAnalyzer.kt`**
+- [ ] **步骤 3：创建 `SpringSemanticAnalyzer.kt`**
 
 ```kotlin
 package dev.diffguard.analyzer
@@ -663,13 +663,13 @@ class SpringSemanticAnalyzer {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [ ] **步骤 4：运行测试确认通过**
 
-Run: `./gradlew test --tests "dev.diffguard.analyzer.SpringSemanticAnalyzerTest"`
+运行：`./gradlew test --tests "dev.diffguard.analyzer.SpringSemanticAnalyzerTest"`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/analyzer/SpringSemanticAnalyzer.kt src/test/kotlin/com/diffguard/analyzer/SpringSemanticAnalyzerTest.kt
@@ -678,13 +678,13 @@ git commit -m "feat: add Spring semantic analyzer"
 
 ---
 
-### Task 4: 实现 JavaPsiAnalyzer
+### 任务 4：实现 JavaPsiAnalyzer
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/psi/JavaPsiAnalyzer.kt`
-- Create: `src/test/kotlin/com/diffguard/psi/JavaPsiAnalyzerTest.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/psi/JavaPsiAnalyzer.kt`
+- 创建：`src/test/kotlin/com/diffguard/psi/JavaPsiAnalyzerTest.kt`
 
-- [ ] **Step 1: 先写失败测试 `JavaPsiAnalyzerTest.kt`**
+- [ ] **步骤 1：先写失败测试 `JavaPsiAnalyzerTest.kt`**
 
 ```kotlin
 package dev.diffguard.psi
@@ -861,13 +861,13 @@ class JavaPsiAnalyzerTest : BasePlatformTestCase() {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [ ] **步骤 2：运行测试确认失败**
 
-Run: `./gradlew test --tests "dev.diffguard.psi.JavaPsiAnalyzerTest"`
+运行：`./gradlew test --tests "dev.diffguard.psi.JavaPsiAnalyzerTest"`
 
-Expected: FAIL，原因是 `JavaPsiAnalyzer` 尚不存在。
+预期：FAIL，原因是 `JavaPsiAnalyzer` 尚不存在。
 
-- [ ] **Step 3: 创建 `JavaPsiAnalyzer.kt`**
+- [ ] **步骤 3：创建 `JavaPsiAnalyzer.kt`**
 
 ```kotlin
 package dev.diffguard.psi
@@ -992,13 +992,13 @@ class JavaPsiAnalyzer {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [ ] **步骤 4：运行测试确认通过**
 
-Run: `./gradlew test --tests "dev.diffguard.psi.JavaPsiAnalyzerTest"`
+运行：`./gradlew test --tests "dev.diffguard.psi.JavaPsiAnalyzerTest"`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/psi/JavaPsiAnalyzer.kt src/test/kotlin/com/diffguard/psi/JavaPsiAnalyzerTest.kt
@@ -1007,13 +1007,13 @@ git commit -m "feat: add Java PSI analyzer for class info and method location"
 
 ---
 
-### Task 5: 实现 MethodCallExtractor
+### 任务 5：实现 MethodCallExtractor
 
-**Files:**
-- Create: `src/main/kotlin/com/diffguard/psi/MethodCallExtractor.kt`
-- Create: `src/test/kotlin/com/diffguard/psi/MethodCallExtractorTest.kt`
+**文件：**
+- 创建：`src/main/kotlin/com/diffguard/psi/MethodCallExtractor.kt`
+- 创建：`src/test/kotlin/com/diffguard/psi/MethodCallExtractorTest.kt`
 
-- [ ] **Step 1: 先写失败测试 `MethodCallExtractorTest.kt`**
+- [ ] **步骤 1：先写失败测试 `MethodCallExtractorTest.kt`**
 
 ```kotlin
 package dev.diffguard.psi
@@ -1169,13 +1169,13 @@ class MethodCallExtractorTest : BasePlatformTestCase() {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [ ] **步骤 2：运行测试确认失败**
 
-Run: `./gradlew test --tests "dev.diffguard.psi.MethodCallExtractorTest"`
+运行：`./gradlew test --tests "dev.diffguard.psi.MethodCallExtractorTest"`
 
-Expected: FAIL，原因是 `MethodCallExtractor` 尚不存在。
+预期：FAIL，原因是 `MethodCallExtractor` 尚不存在。
 
-- [ ] **Step 3: 创建 `MethodCallExtractor.kt`**
+- [ ] **步骤 3：创建 `MethodCallExtractor.kt`**
 
 ```kotlin
 package dev.diffguard.psi
@@ -1320,13 +1320,13 @@ class MethodCallExtractor {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [ ] **步骤 4：运行测试确认通过**
 
-Run: `./gradlew test --tests "dev.diffguard.psi.MethodCallExtractorTest"`
+运行：`./gradlew test --tests "dev.diffguard.psi.MethodCallExtractorTest"`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/psi/MethodCallExtractor.kt src/test/kotlin/com/diffguard/psi/MethodCallExtractorTest.kt
@@ -1335,13 +1335,13 @@ git commit -m "feat: add method call extractor with type classification"
 
 ---
 
-### Task 6: 完善 CodeContextBuilder（集成 PSI 分析）
+### 任务 6：完善 CodeContextBuilder（集成 PSI 分析）
 
-**Files:**
-- Modify: `src/main/kotlin/com/diffguard/context/CodeContextBuilder.kt`
-- Modify: `src/test/kotlin/com/diffguard/context/CodeContextBuilderTest.kt`
+**文件：**
+- 修改：`src/main/kotlin/com/diffguard/context/CodeContextBuilder.kt`
+- 修改：`src/test/kotlin/com/diffguard/context/CodeContextBuilderTest.kt`
 
-- [ ] **Step 1: 更新 `CodeContextBuilderTest.kt`，添加集成测试**
+- [ ] **步骤 1：更新 `CodeContextBuilderTest.kt`，添加集成测试**
 
 在现有测试文件末尾添加：
 
@@ -1355,7 +1355,7 @@ git commit -m "feat: add method call extractor with type classification"
     }
 ```
 
-- [ ] **Step 2: 更新 `CodeContextBuilder.kt`，集成 PSI 分析**
+- [ ] **步骤 2：更新 `CodeContextBuilder.kt`，集成 PSI 分析**
 
 ```kotlin
 package dev.diffguard.context
@@ -1536,13 +1536,13 @@ class CodeContextBuilder(private val project: Project) {
 }
 ```
 
-- [ ] **Step 3: 运行编译检查**
+- [ ] **步骤 3：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 4: Commit**
+- [ ] **步骤 4：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/context/CodeContextBuilder.kt src/test/kotlin/com/diffguard/context/CodeContextBuilderTest.kt
@@ -1551,13 +1551,13 @@ git commit -m "feat: integrate PSI analysis into CodeContextBuilder"
 
 ---
 
-### Task 7: 修改 ReviewPromptBuilder（替换 Prompt 结构）
+### 任务 7：修改 ReviewPromptBuilder（替换 Prompt 结构）
 
-**Files:**
-- Modify: `src/main/kotlin/com/diffguard/review/ReviewPromptBuilder.kt`
-- Modify: `src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt`
+**文件：**
+- 修改：`src/main/kotlin/com/diffguard/review/ReviewPromptBuilder.kt`
+- 修改：`src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt`
 
-- [ ] **Step 1: 更新 `ReviewPromptBuilderTest.kt`**
+- [ ] **步骤 1：更新 `ReviewPromptBuilderTest.kt`**
 
 ```kotlin
 package dev.diffguard.review
@@ -1670,13 +1670,13 @@ class ReviewPromptBuilderTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [ ] **步骤 2：运行测试确认失败**
 
-Run: `./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
+运行：`./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
 
-Expected: FAIL，因为 `ReviewPromptBuilder.build` 签名已变更。
+预期：FAIL，因为 `ReviewPromptBuilder.build` 签名已变更。
 
-- [ ] **Step 3: 更新 `ReviewPromptBuilder.kt`**
+- [ ] **步骤 3：更新 `ReviewPromptBuilder.kt`**
 
 ```kotlin
 package dev.diffguard.review
@@ -1787,13 +1787,13 @@ class ReviewPromptBuilder {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [ ] **步骤 4：运行测试确认通过**
 
-Run: `./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
+运行：`./gradlew test --tests "dev.diffguard.review.ReviewPromptBuilderTest"`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/review/ReviewPromptBuilder.kt src/test/kotlin/com/diffguard/review/ReviewPromptBuilderTest.kt
@@ -1802,12 +1802,12 @@ git commit -m "feat: replace ReviewPromptBuilder with PSI context support"
 
 ---
 
-### Task 8: 修改 ReviewOrchestrator（集成 PSI Context）
+### 任务 8：修改 ReviewOrchestrator（集成 PSI Context）
 
-**Files:**
-- Modify: `src/main/kotlin/com/diffguard/review/ReviewOrchestrator.kt`
+**文件：**
+- 修改：`src/main/kotlin/com/diffguard/review/ReviewOrchestrator.kt`
 
-- [ ] **Step 1: 更新 `ReviewOrchestrator.kt`**
+- [ ] **步骤 1：更新 `ReviewOrchestrator.kt`**
 
 在 `reviewStagedDiff()` 方法中集成 `CodeContextBuilder`：
 
@@ -1916,23 +1916,23 @@ class ReviewOrchestrator(
 }
 ```
 
-- [ ] **Step 2: 运行编译检查**
+- [ ] **步骤 2：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。如果 `ReviewOrchestrator` 的构造函数签名变更导致 `AIReviewAction` 编译错误，需要同步修改 `AIReviewAction`。
+预期：PASS。如果 `ReviewOrchestrator` 的构造函数签名变更导致 `AIReviewAction` 编译错误，需要同步修改 `AIReviewAction`。
 
-- [ ] **Step 3: 检查并修复 `AIReviewAction` 中的调用**
+- [ ] **步骤 3：检查并修复 `AIReviewAction` 中的调用**
 
 在 `AIReviewAction.kt` 中，`ReviewOrchestrator` 的构造调用需要传入 `project` 参数（已有）。确认编译通过。
 
-- [ ] **Step 4: 运行所有测试**
+- [ ] **步骤 4：运行所有测试**
 
-Run: `./gradlew test`
+运行：`./gradlew test`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add src/main/kotlin/com/diffguard/review/ReviewOrchestrator.kt
@@ -1941,36 +1941,36 @@ git commit -m "feat: integrate PSI context into review orchestrator"
 
 ---
 
-### Task 9: 端到端验证与最终测试
+### 任务 9：端到端验证与最终测试
 
-**Files:**
+**文件：**
 - 仅修改编译/测试失败的文件
 
-- [ ] **Step 1: 运行完整测试**
+- [ ] **步骤 1：运行完整测试**
 
-Run: `./gradlew test`
+运行：`./gradlew test`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 2: 运行编译检查**
+- [ ] **步骤 2：运行编译检查**
 
-Run: `./gradlew compileKotlin`
+运行：`./gradlew compileKotlin`
 
-Expected: PASS。
+预期：PASS。
 
-- [ ] **Step 3: 构建插件**
+- [ ] **步骤 3：构建插件**
 
-Run: `./gradlew buildPlugin`
+运行：`./gradlew buildPlugin`
 
-Expected: PASS，生成 `build/distributions/` 下的 zip 文件。
+预期：PASS，生成 `build/distributions/` 下的 zip 文件。
 
-- [ ] **Step 4: 启动 IDE 沙箱验证**
+- [ ] **步骤 4：启动 IDE 沙箱验证**
 
-Run: `./gradlew runIde`
+运行：`./gradlew runIde`
 
-Expected: 插件正常加载，AI Review 功能可用。
+预期：插件正常加载，AI Review 功能可用。
 
-- [ ] **Step 5: 最终 Commit**
+- [ ] **步骤 5：最终提交**
 
 ```bash
 git add -A
@@ -1983,5 +1983,5 @@ git commit -m "feat: implement PSI Context Builder for AI Review"
 
 - **Spec 覆盖：** 计划覆盖了数据模型、Diff 解析、PSI 分析、方法调用提取、Spring 语义识别、Prompt 重构、Orchestrator 集成。
 - **占位符扫描：** 无 TBD/TODO/占位表达。
-- **类型一致性：** `CodeContext`、`MethodContext`、`MethodCall`、`DependencyInfo`、`SpringSemantic` 在各 Task 中定义一致。
+- **类型一致性：** `CodeContext`、`MethodContext`、`MethodCall`、`DependencyInfo`、`SpringSemantic` 在各任务 中定义一致。
 - **职责锁定：** 每个文件职责清晰，无跨层逻辑。
