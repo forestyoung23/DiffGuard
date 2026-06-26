@@ -33,6 +33,14 @@ class AIReviewAction : AnAction("Review with DiffGuard") {
         }
 
         ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.show()
+        startReview(project, toolWindowService, reviewChanges)
+    }
+
+    private fun startReview(
+        project: Project,
+        toolWindowService: AIReviewToolWindowService,
+        reviewChanges: List<Change>
+    ) {
         if (!toolWindowService.tryStartReview()) {
             toolWindowService.showState(ReviewUiState.Reviewing("DiffGuard 已在进行中，请等待当前任务完成。"))
             return

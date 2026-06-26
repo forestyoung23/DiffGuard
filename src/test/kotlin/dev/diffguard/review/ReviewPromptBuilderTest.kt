@@ -25,6 +25,16 @@ class ReviewPromptBuilderTest {
     }
 
     @Test
+    fun `prompt requests finding metadata and evidence backed issues only`() {
+        val prompt = builder.build("diff --git a/Foo.java", emptyList())
+
+        assertTrue(prompt.contains("\"category\""), prompt)
+        assertTrue(prompt.contains("\"confidence\""), prompt)
+        assertTrue(prompt.contains("\"evidence\""), prompt)
+        assertTrue(prompt.contains("Only report issues supported by the visible diff or code context."), prompt)
+    }
+
+    @Test
     fun `prompt contains code context when provided`() {
         val contexts = listOf(
             CodeContext(

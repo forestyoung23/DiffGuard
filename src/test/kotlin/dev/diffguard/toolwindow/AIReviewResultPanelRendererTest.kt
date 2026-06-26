@@ -60,6 +60,37 @@ class AIReviewResultPanelRendererTest {
     }
 
     @Test
+    fun `renderFindings shows metadata without action buttons`() {
+        val component = renderer.renderFindings(
+            listOf(
+                ReviewFinding(
+                    level = "HIGH",
+                    file = "UserService.kt",
+                    line = 42,
+                    category = "bug",
+                    confidence = "high",
+                    evidence = "dto may be null",
+                    message = "可能空指针"
+                ),
+                ReviewFinding(level = "LOW", file = "README.md", line = null, message = "可读性建议")
+            )
+        )
+
+        val visibleText = visibleTextIn(component)
+        assertTrue(visibleText.contains("bug"), visibleText)
+        assertTrue(visibleText.contains("confidence: high"), visibleText)
+        assertTrue(visibleText.contains("dto may be null"), visibleText)
+        assertTrue(visibleText.contains("UserService.kt:42"), visibleText)
+        assertTrue(visibleText.contains("README.md"), visibleText)
+        assertFalse(buttonTextsIn(component).contains("全部"))
+        assertFalse(buttonTextsIn(component).contains("HIGH"))
+        assertFalse(buttonTextsIn(component).contains("MEDIUM"))
+        assertFalse(buttonTextsIn(component).contains("LOW"))
+        assertFalse(buttonTextsIn(component).contains("复制摘要"))
+        assertFalse(buttonTextsIn(component).contains("重新审查"))
+    }
+
+    @Test
     fun `renderFindings keeps external finding text as plain visible text without editor pane`() {
         val component = renderer.renderFindings(
             listOf(
@@ -152,6 +183,11 @@ class AIReviewResultPanelRendererTest {
         )
         textComponent.mouseListeners.forEach { it.mouseClicked(event) }
     }
+
+    private fun buttonTextsIn(component: Component): List<String> =
+        componentsIn(component)
+            .filterIsInstance<javax.swing.JButton>()
+            .map { it.text }
 
     private fun componentsIn(component: Component): List<Component> =
         listOf(component) + if (component is Container) {

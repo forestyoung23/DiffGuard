@@ -26,6 +26,29 @@ class ReviewResultParserTest {
     }
 
     @Test
+    fun `parse finding metadata when model returns category confidence and evidence`() {
+        val result = parser.parse(
+            """
+            [
+              {
+                "level":"HIGH",
+                "file":"UserService.java",
+                "line":42,
+                "category":"bug",
+                "confidence":"high",
+                "evidence":"createUser dereferences dto without a null check",
+                "message":"Potential null pointer"
+              }
+            ]
+            """.trimIndent()
+        )
+
+        assertEquals("bug", result[0].category)
+        assertEquals("high", result[0].confidence)
+        assertEquals("createUser dereferences dto without a null check", result[0].evidence)
+    }
+
+    @Test
     fun `parse fenced json block`() {
         val result = parser.parse(
             """
