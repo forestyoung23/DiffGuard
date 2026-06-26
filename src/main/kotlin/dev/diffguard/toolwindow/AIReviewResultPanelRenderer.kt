@@ -142,6 +142,10 @@ internal class AIReviewResultPanelRenderer(
             }
         )
         add(Box.createVerticalStrut(9))
+        metadataText(finding)?.let {
+            add(hintText(it))
+            add(Box.createVerticalStrut(6))
+        }
         add(bodyText(finding.message))
         enableFindingClick(this, finding)
     }
@@ -226,6 +230,15 @@ internal class AIReviewResultPanelRenderer(
         } else {
             "发现 ${findings.size} 个问题，建议按严重级别逐项检查。"
         }
+    }
+
+    private fun metadataText(finding: ReviewFinding): String? {
+        val parts = listOfNotNull(
+            finding.category?.takeIf { it.isNotBlank() },
+            finding.confidence?.takeIf { it.isNotBlank() }?.let { "confidence: $it" },
+            finding.evidence?.takeIf { it.isNotBlank() }
+        )
+        return parts.takeIf { it.isNotEmpty() }?.joinToString(" | ")
     }
 
     private fun List<ReviewFinding>.countLevel(level: String): Int =

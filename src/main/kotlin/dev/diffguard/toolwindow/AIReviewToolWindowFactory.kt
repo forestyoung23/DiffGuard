@@ -4,8 +4,8 @@ import dev.diffguard.model.ReviewFinding
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import com.intellij.openapi.wm.ToolWindow
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
@@ -18,8 +18,9 @@ import javax.swing.JPanel
 class AIReviewToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val navigator = ReviewFindingNavigator.forProject(project)
+        val service = project.service<AIReviewToolWindowService>()
         val view = AIReviewToolWindowView(onFindingSelected = navigator::navigate)
-        project.service<AIReviewToolWindowService>().view = view
+        service.view = view
 
         val content = toolWindow.contentManager.factory.createContent(view.component, "Results", false)
         toolWindow.contentManager.addContent(content)

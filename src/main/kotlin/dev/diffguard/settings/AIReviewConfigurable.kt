@@ -10,7 +10,7 @@ class AIReviewConfigurable : Configurable {
 
     override fun createComponent(): JComponent {
         val service = AIReviewSettingsService.getInstance()
-        val settingsComponent = AIReviewSettingsComponent()
+        val settingsComponent = AIReviewSettingsComponent(savedApiKeyProvider = { service.stateWithSecrets().apiKey })
         component = settingsComponent
         settingsComponent.resetFrom(service.stateWithSecrets())
         return settingsComponent.getPanel()

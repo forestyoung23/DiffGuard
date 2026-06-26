@@ -1,48 +1,48 @@
-# DiffGuard Icon and Result Navigation Design
+# DiffGuard 图标与结果导航设计
 
-## Context
+## 背景
 
-DiffGuard currently uses the default IntelliJ tool window icon. The review results panel renders findings as static Swing cards, even though each `ReviewFinding` already carries a file path and optional line number.
+DiffGuard 当前使用默认 IntelliJ ToolWindow 图标。Review 结果面板把 findings 渲染为静态 Swing 卡片，但每个 `ReviewFinding` 已经携带文件路径和可选行号。
 
-## Goals
+## 目标
 
-- Add a custom DiffGuard icon using the approved DG Mark direction.
-- Use the icon for the DiffGuard tool window and review action.
-- Allow users to click a review finding location and jump to the corresponding project file and line.
-- Keep result text rendered as plain Swing text, preserving the current HTML injection protection.
+- 按已确认的 DG Mark 方向添加自定义 DiffGuard 图标。
+- 将该图标用于 DiffGuard ToolWindow 和 Review action。
+- 允许用户点击 Review finding 的位置并跳转到对应项目文件和行号。
+- 继续用普通 Swing 文本渲染结果文本，保留现有 HTML 注入防护。
 
-## Non-Goals
+## 非目标
 
-- No remote model list or settings changes in this work.
-- No redesign of the full results UI.
-- No changes to AI parsing beyond using the existing `ReviewFinding.file` and `ReviewFinding.line` fields.
+- 本次不处理远程模型列表或 Settings 变更。
+- 不重新设计完整结果 UI。
+- 除使用现有 `ReviewFinding.file` 和 `ReviewFinding.line` 字段外，不修改 AI 解析逻辑。
 
-## Icon Design
+## 图标设计
 
-The icon will be a checked-in SVG under plugin resources. It will use a compact DG mark: blue rounded square base, white DG form, and green guard/check accent. The icon should remain legible at IntelliJ toolbar/tool-window sizes.
+图标会作为 SVG 提交到插件 resources 下。图标采用紧凑的 DG mark：蓝色圆角方形底、白色 DG 形态，以及绿色 guard/check 强调元素。图标在 IntelliJ 工具栏和 ToolWindow 尺寸下应保持清晰可辨。
 
-`plugin.xml` will register the icon for:
+`plugin.xml` 会为以下位置注册图标：
 
 - `toolWindow` `icon`
 - `DiffGuard.AIReviewAction` `icon`
 
-## Result Navigation
+## 结果导航
 
-The result renderer will accept an optional finding selection callback. Finding cards with a project location will expose a clickable location row. Clicking it sends the `ReviewFinding` to the callback.
+结果 renderer 会接收一个可选的 finding 选择回调。带项目位置的 finding 卡片会暴露一个可点击的位置行。点击后会把对应 `ReviewFinding` 传给回调。
 
-Navigation will live outside the renderer. The tool window view will receive a navigator dependency and pass a callback into the renderer. The default navigator will:
+导航逻辑放在 renderer 之外。ToolWindow view 接收 navigator 依赖，并把回调传入 renderer。默认 navigator 会：
 
-- Resolve `ReviewFinding.file` against the project base directory.
-- Open the file with `OpenFileDescriptor`.
-- Jump to `line - 1` when `line` is present and positive.
-- Open the first line when no valid line is present.
-- Show a lightweight notification when the file cannot be found.
+- 基于项目根目录解析 `ReviewFinding.file`。
+- 使用 `OpenFileDescriptor` 打开文件。
+- 当 `line` 存在且为正数时跳转到 `line - 1`。
+- 当没有有效行号时打开第一行。
+- 当文件找不到时展示轻量通知。
 
-This keeps the renderer testable and avoids coupling pure UI rendering to project file-system APIs.
+这样可以保持 renderer 可测试，并避免把纯 UI 渲染与项目文件系统 API 耦合。
 
-## Testing
+## 测试
 
-- Add renderer tests proving clickable findings invoke the callback and plain text rendering remains intact.
-- Add navigator tests for opening a resolved file and reporting a missing file when practical in the IntelliJ test framework.
-- Keep existing tool window tests passing.
-- Run the focused tool window/settings tests, then `buildPlugin`.
+- 添加 renderer 测试，证明可点击 finding 会调用回调，且普通文本渲染仍保持不变。
+- 在 IntelliJ 测试框架可行时，添加 navigator 测试，覆盖打开已解析文件和报告缺失文件。
+- 保持现有 ToolWindow 测试通过。
+- 先运行聚焦的 ToolWindow/Settings 测试，再运行 `buildPlugin`。
